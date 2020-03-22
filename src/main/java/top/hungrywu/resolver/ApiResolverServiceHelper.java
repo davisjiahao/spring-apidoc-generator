@@ -1,11 +1,13 @@
-package top.hungrywu.service;
+package top.hungrywu.resolver;
 
 import com.intellij.openapi.project.Project;
+import lombok.extern.log4j.Log4j;
 import top.hungrywu.bean.ApiDetail;
 import top.hungrywu.bean.ApiDoc;
 import top.hungrywu.enums.annotations.BaseMappingAnnotation;
 import top.hungrywu.enums.annotations.SpringControllerAnnotation;
 import top.hungrywu.resolver.BaseResolver;
+import top.hungrywu.resolver.PsiTypeResolverHelper;
 import top.hungrywu.resolver.SpringControllerResolver;
 
 import java.util.Arrays;
@@ -19,6 +21,7 @@ import java.util.Objects;
  * @Date 2020/2/27 6:55 下午
  * @Version 1.0
  **/
+@Log4j
 public class ApiResolverServiceHelper {
     /**
      * 为指定工程构建api文档
@@ -34,6 +37,10 @@ public class ApiResolverServiceHelper {
         List<ApiDetail> apiDetails = resolveAllApi(project);
 
         apiDoc.setApiDetails(apiDetails);
+
+        log.info(apiDetails);
+
+        PsiTypeResolverHelper.clearResolvedInfoCache();
 
         return apiDoc;
     }

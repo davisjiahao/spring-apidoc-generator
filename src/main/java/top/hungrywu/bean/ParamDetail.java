@@ -14,5 +14,8 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class ParamDetail extends BaseInfo {
-
+    /**
+     * 参数类型
+     */
+    private String paramType;
 }

@@ -4,11 +4,9 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.pom.Navigatable;
 import org.jetbrains.annotations.NotNull;
-import top.hungrywu.service.ApiResolverServiceHelper;
+import top.hungrywu.resolver.ApiResolverServiceHelper;
 
 import java.util.Objects;
 
@@ -41,6 +39,7 @@ public class GenerateProjectApiDocAction extends AnAction {
             return;
         }
 
+        // 设置只有在本工程的主项目目录上才显示生成api文档的选项
         String currentFilePath = file.getPath();
         if (Objects.equals(currentProject.getBasePath(), currentFilePath)) {
             event.getPresentation().setEnabledAndVisible(true);

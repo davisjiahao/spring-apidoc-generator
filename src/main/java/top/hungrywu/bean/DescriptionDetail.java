@@ -30,10 +30,10 @@ public class DescriptionDetail {
     /**
      * 创建日期
      */
-    private Date createTime;
+    private String createTime;
 
     /**
-     * 修改日期
+     * 版本信息
      */
-    private Date modifyTime;
+    private String version;
 }

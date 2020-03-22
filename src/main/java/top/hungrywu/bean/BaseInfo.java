@@ -23,6 +23,11 @@ public class BaseInfo {
     private String typeName;
 
     /**
+     * 该参数是否可选
+     */
+    private boolean required;
+
+    /**
      * 子类型描述信息
      */
     private List<BaseInfo> subTypeInfos;
