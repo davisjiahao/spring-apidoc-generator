@@ -1,4 +1,4 @@
-package top.hungrywu.resolver;
+package top.hungrywu.helper;
 
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
@@ -79,7 +79,7 @@ public class PsiTypeResolverHelper {
 
                 // 1、解析psiField 的javaDoc注释
                 PsiDocComment psiDocCommentOnField = subPsiField.getDocComment();
-                subBaseInfo.setDescription(CommentResolverServiceHelper.getDescriptionInJavaDoc(psiDocCommentOnField));
+                subBaseInfo.setDescription(PsiCommentResolverServiceHelper.getDescriptionInJavaDoc(psiDocCommentOnField));
 
                 // 2、解析psiField 的注解信息 todo
 

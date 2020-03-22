@@ -4,13 +4,8 @@ import com.intellij.openapi.project.Project;
 import lombok.extern.log4j.Log4j;
 import top.hungrywu.bean.ApiDetail;
 import top.hungrywu.bean.ApiDoc;
-import top.hungrywu.enums.annotations.BaseMappingAnnotation;
-import top.hungrywu.enums.annotations.SpringControllerAnnotation;
-import top.hungrywu.resolver.BaseResolver;
-import top.hungrywu.resolver.PsiTypeResolverHelper;
-import top.hungrywu.resolver.SpringControllerResolver;
+import top.hungrywu.helper.PsiTypeResolverHelper;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -22,7 +17,7 @@ import java.util.Objects;
  * @Version 1.0
  **/
 @Log4j
-public class ApiResolverServiceHelper {
+public class ApiResolver {
     /**
      * 为指定工程构建api文档
      * @param project

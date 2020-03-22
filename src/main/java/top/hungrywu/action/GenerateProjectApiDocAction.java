@@ -6,7 +6,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
-import top.hungrywu.resolver.ApiResolverServiceHelper;
+import top.hungrywu.resolver.ApiResolver;
 
 import java.util.Objects;
 
@@ -51,6 +51,6 @@ public class GenerateProjectApiDocAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent event) {
-        ApiResolverServiceHelper.buildApiDoc(event.getProject());
+        ApiResolver.buildApiDoc(event.getProject());
     }
 }

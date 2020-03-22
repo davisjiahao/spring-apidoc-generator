@@ -13,6 +13,10 @@ import top.hungrywu.bean.ParamDetail;
 import top.hungrywu.bean.ReturnDetail;
 import top.hungrywu.enums.annotations.SpringControllerAnnotation;
 import top.hungrywu.enums.annotations.SpringRequestMethodAnnotation;
+import top.hungrywu.helper.PsiCommentResolverServiceHelper;
+import top.hungrywu.helper.PsiAnnotationResolverHelper;
+import top.hungrywu.helper.PsiMethodResolverHelper;
+import top.hungrywu.helper.PsiTypeResolverHelper;
 
 import java.util.*;
 
@@ -51,7 +55,7 @@ public class SpringControllerResolver extends BaseResolver {
 
         // 2、解析myClass上的javaDoc注释，获取默认的author信息
         PsiDocComment comment = psiClass.getDocComment();
-        DescriptionDetail classDescriptionDetail = CommentResolverServiceHelper.parseJavaDoc(comment);
+        DescriptionDetail classDescriptionDetail = PsiCommentResolverServiceHelper.parseJavaDoc(comment);
         if (Objects.isNull(classDescriptionDetail)) {
             classDescriptionDetail = new DescriptionDetail();
         }
@@ -143,7 +147,7 @@ public class SpringControllerResolver extends BaseResolver {
             // 获取method级别的RequestPath注解上的method属性的值
             methodTypeListOnMethod = PsiAnnotationResolverHelper.getAnnotationAttributeValues(springAnnotationOnMethod, METHOD_ATTR_NAME);
         } else {
-            methodTypeListOnMethod = new ArrayList<>(1);
+            methodTypeListOnMethod = new ArrayList<>();
             methodTypeListOnMethod.add(requestMethodAnnotation.methodName());
         }
         // 获取method级别的RequestPath注解上的value属性的值,即baseurlpath
@@ -156,7 +160,7 @@ public class SpringControllerResolver extends BaseResolver {
 
         // 3、解析函数级别上的javadoc信息
         PsiDocComment commentOnMethod = psiMethod.getDocComment();
-        DescriptionDetail methodDescriptionDetail = CommentResolverServiceHelper.parseJavaDoc(commentOnMethod);
+        DescriptionDetail methodDescriptionDetail = PsiCommentResolverServiceHelper.parseJavaDoc(commentOnMethod);
         if (Objects.isNull(methodDescriptionDetail)) {
             methodDescriptionDetail = new DescriptionDetail();
         }
@@ -166,7 +170,7 @@ public class SpringControllerResolver extends BaseResolver {
         if (StringUtils.isNotEmpty(methodDescriptionDetail.getDescription())) {
             apiDetailRet.setDescription(methodDescriptionDetail.getDescription());
         }
-        Map<String, String> paramJavaDocInfos = CommentResolverServiceHelper.getParamTagValuesInJavaDoc(commentOnMethod);
+        Map<String, String> paramJavaDocInfos = PsiCommentResolverServiceHelper.getParamTagValuesInJavaDoc(commentOnMethod);
 
         // 4、解析函数参数
         PsiParameterList parameterList = psiMethod.getParameterList();

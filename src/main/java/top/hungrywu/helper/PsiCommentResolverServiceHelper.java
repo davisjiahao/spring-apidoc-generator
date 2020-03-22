@@ -1,10 +1,9 @@
-package top.hungrywu.resolver;
+package top.hungrywu.helper;
 
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.sun.istack.Nullable;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.assertj.core.annotations.NonNull;
 import top.hungrywu.bean.DescriptionDetail;
@@ -18,7 +17,7 @@ import java.util.function.Function;
  * @Date 2020/3/2 12:05 下午
  * @Version 1.0
  **/
-public class CommentResolverServiceHelper {
+public class PsiCommentResolverServiceHelper {
 
     public final static String AUTHOR_NAME_TAG_NAME_IN_JAVADOC = "author";
     public final static String AUTHOR_MAIL_TAG_NAME_IN_JAVADOC = "mail";

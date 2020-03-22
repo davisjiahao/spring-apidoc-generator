@@ -1,4 +1,4 @@
-package top.hungrywu.resolver;
+package top.hungrywu.helper;
 
 import com.intellij.psi.*;
 import top.hungrywu.bean.BaseInfo;
