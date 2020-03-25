@@ -17,7 +17,7 @@ import java.util.function.Function;
  * @Date 2020/3/2 12:05 下午
  * @Version 1.0
  **/
-public class PsiCommentResolverServiceHelper {
+public class PsiCommentResolverHelper {
 
     public final static String AUTHOR_NAME_TAG_NAME_IN_JAVADOC = "author";
     public final static String AUTHOR_MAIL_TAG_NAME_IN_JAVADOC = "mail";

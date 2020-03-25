@@ -13,7 +13,7 @@ import top.hungrywu.bean.ParamDetail;
 import top.hungrywu.bean.ReturnDetail;
 import top.hungrywu.enums.annotations.SpringControllerAnnotation;
 import top.hungrywu.enums.annotations.SpringRequestMethodAnnotation;
-import top.hungrywu.helper.PsiCommentResolverServiceHelper;
+import top.hungrywu.helper.PsiCommentResolverHelper;
 import top.hungrywu.helper.PsiAnnotationResolverHelper;
 import top.hungrywu.helper.PsiMethodResolverHelper;
 import top.hungrywu.helper.PsiTypeResolverHelper;
@@ -55,7 +55,7 @@ public class SpringControllerResolver extends BaseResolver {
 
         // 2、解析myClass上的javaDoc注释，获取默认的author信息
         PsiDocComment comment = psiClass.getDocComment();
-        DescriptionDetail classDescriptionDetail = PsiCommentResolverServiceHelper.parseJavaDoc(comment);
+        DescriptionDetail classDescriptionDetail = PsiCommentResolverHelper.parseJavaDoc(comment);
         if (Objects.isNull(classDescriptionDetail)) {
             classDescriptionDetail = new DescriptionDetail();
         }
@@ -160,7 +160,7 @@ public class SpringControllerResolver extends BaseResolver {
 
         // 3、解析函数级别上的javadoc信息
         PsiDocComment commentOnMethod = psiMethod.getDocComment();
-        DescriptionDetail methodDescriptionDetail = PsiCommentResolverServiceHelper.parseJavaDoc(commentOnMethod);
+        DescriptionDetail methodDescriptionDetail = PsiCommentResolverHelper.parseJavaDoc(commentOnMethod);
         if (Objects.isNull(methodDescriptionDetail)) {
             methodDescriptionDetail = new DescriptionDetail();
         }
@@ -170,7 +170,7 @@ public class SpringControllerResolver extends BaseResolver {
         if (StringUtils.isNotEmpty(methodDescriptionDetail.getDescription())) {
             apiDetailRet.setDescription(methodDescriptionDetail.getDescription());
         }
-        Map<String, String> paramJavaDocInfos = PsiCommentResolverServiceHelper.getParamTagValuesInJavaDoc(commentOnMethod);
+        Map<String, String> paramJavaDocInfos = PsiCommentResolverHelper.getParamTagValuesInJavaDoc(commentOnMethod);
 
         // 4、解析函数参数
         PsiParameterList parameterList = psiMethod.getParameterList();
