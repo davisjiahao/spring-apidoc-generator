@@ -31,5 +31,7 @@ ext {
             validator             : 'org.hibernate:hibernate-validator:5.1.0.Final',
 
             lombok                : 'org.projectlombok:lombok:1.16.10',
+
+//            jgit                  : 'org.eclipse.jgit:org.eclipse.jgit:4.8.0.201706111038-r',
     ]
 }

@@ -6,7 +6,9 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
+import top.hungrywu.bean.ApiDoc;
 import top.hungrywu.resolver.ApiResolver;
+import top.hungrywu.service.KiwiService;
 
 import java.util.Objects;
 
@@ -51,6 +53,15 @@ public class GenerateProjectApiDocAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent event) {
-        ApiResolver.buildApiDoc(event.getProject());
+        ApiDoc apiDoc = ApiResolver.buildApiDoc(event.getProject());
+        if (Objects.isNull(apiDoc)) {
+            // todo error log
+        }
+        KiwiService kiwiService = new KiwiService();
+        try {
+            kiwiService.buildApiDocOnWiki(apiDoc);
+        } catch (Exception e) {
+            // todo error log
+        }
     }
 }

@@ -5,10 +5,13 @@ import lombok.extern.log4j.Log4j;
 import top.hungrywu.bean.ApiDetail;
 import top.hungrywu.bean.ApiDoc;
 import top.hungrywu.helper.PsiTypeResolverHelper;
+import top.hungrywu.service.KiwiService;
+import top.hungrywu.util.GitUtils;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+
 
 /**
  * @Description 解析api接口的服务类
@@ -28,6 +31,12 @@ public class ApiResolver {
                 setProjectName(project.getName()).
                 setApiDeployHost("127.0.0.1").
                 setApiDeployPort(8080);
+
+        GitUtils.VersionInfoByGit versionInfoByGit = GitUtils.getVersionInfoByGit(project);
+        if (!Objects.isNull(versionInfoByGit)) {
+            apiDoc.setBranchName(versionInfoByGit.getBranchName())
+                    .setCommitVersion(versionInfoByGit.getCommitId());
+        }
 
         List<ApiDetail> apiDetails = resolveAllApi(project);
 

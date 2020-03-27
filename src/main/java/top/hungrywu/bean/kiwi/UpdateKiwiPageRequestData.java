@@ -1,60 +1,59 @@
-package top.hungrywu.bean;
+package top.hungrywu.bean.kiwi;
 
 import lombok.Builder;
 import lombok.Data;
-import lombok.experimental.Accessors;
-
-import java.util.List;
 
 /**
  * @Description TODO
  * @Author daviswujiahao
- * @Date 2020/3/25 5:51 下午
+ * @Date 2020/3/27 1:09 下午
  * @Version 1.0
  **/
-
-@Builder
 @Data
-public class WikiRequestData {
+@Builder
+public class UpdateKiwiPageRequestData {
 
     /**
+     * id : 3604482
      * type : page
-     * ancestors : [{"id":339095512}]
-     * title : new page234
-     * space : {"key":"~daviswujiahao"}
-     * body : {"storage":{"value":"||col1||col2||","representation":"storage"}}
+     * title : new page
+     * space : {"key":"TST"}
+     * body : {"storage":{"value":"<p>This is the updated text for the new page<\/p>","representation":"storage"}}
+     * version : {"number":2}
      */
 
+    private String id;
     private String type;
     private String title;
     private SpaceBean space;
     private BodyBean body;
-    private List<AncestorsBean> ancestors;
+    private VersionBean version;
 
-    @Builder
+
     @Data
+    @Builder
     public static class SpaceBean {
         /**
-         * key : ~daviswujiahao
+         * key : TST
          */
 
         private String key;
-
     }
-    @Builder
+
     @Data
+    @Builder
     public static class BodyBean {
         /**
-         * storage : {"value":"||col1||col2||","representation":"storage"}
+         * storage : {"value":"<p>This is the updated text for the new page<\/p>","representation":"storage"}
          */
 
         private StorageBean storage;
 
-        @Builder
         @Data
+        @Builder
         public static class StorageBean {
             /**
-             * value : ||col1||col2||
+             * value : <p>This is the updated text for the new page</p>
              * representation : storage
              */
 
@@ -64,13 +63,13 @@ public class WikiRequestData {
         }
     }
 
-    @Builder
     @Data
-    public static class AncestorsBean {
+    @Builder
+    public static class VersionBean {
         /**
-         * id : 339095512
+         * number : 2
          */
 
-        private String id;
+        private int number;
     }
 }

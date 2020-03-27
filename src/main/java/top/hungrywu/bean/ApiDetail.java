@@ -1,6 +1,7 @@
 package top.hungrywu.bean;
 
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.util.List;
 
@@ -11,6 +12,7 @@ import java.util.List;
  * @Version 1.0
  **/
 
+@Accessors(chain = true)
 @Data
 public class ApiDetail {
 
@@ -50,4 +52,9 @@ public class ApiDetail {
      * 接口协议名称
      */
     private String protocolName;
+
+    /**
+     * api 访问url
+     */
+    private String apiContentUrl;
 }

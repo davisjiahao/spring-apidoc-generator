@@ -34,4 +34,8 @@ public class ApiDoc {
      * api 服务详情列表
      */
     private List<ApiDetail> apiDetails;
+
+    private String branchName;
+
+    private String commitVersion;
 }
