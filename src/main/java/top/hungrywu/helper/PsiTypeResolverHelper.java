@@ -1,10 +1,8 @@
 package top.hungrywu.helper;
 
 import com.intellij.psi.*;
-import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.util.text.DateFormatUtil;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.assertj.core.annotations.NonNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,8 +49,8 @@ public class PsiTypeResolverHelper {
             baseInfo.setSubTypeInfos(new ArrayList<>(0));
             return;
         }
-        if (!(psiType instanceof PsiClassReferenceType)) {
-            // todo impossible: 不是基本类型，则一定会是 PsiClassReferenceType
+        if (!(psiType instanceof PsiClassType)) {
+            // todo impossible: 不是基本类型，则一定会是 PsiClassType
             return;
         }
 
@@ -72,7 +70,7 @@ public class PsiTypeResolverHelper {
 //        Map<String, PsiType> trueTypeMap = new HashMap<>();
         PsiClass psiClass;
         do {
-            psiSubstitutor = ((PsiClassReferenceType) psiType).resolveGenerics().getSubstitutor();
+            psiSubstitutor = ((PsiClassType) psiType).resolveGenerics().getSubstitutor();
             if (Objects.nonNull(psiSubstitutor) && MapUtils.isNotEmpty(psiSubstitutor.getSubstitutionMap())) {
                 (psiSubstitutor.getSubstitutionMap()).forEach((genericParamType, trueType) -> {
                     if (Objects.nonNull(trueType) && !Objects.equals(genericParamType.getName(), trueType.getPresentableText())) {
@@ -80,7 +78,7 @@ public class PsiTypeResolverHelper {
                     }
                 });
             }
-            psiClass = ((PsiClassReferenceType) psiType).resolve();
+            psiClass = ((PsiClassType) psiType).resolve();
 
             PsiField[] allFields = psiClass.getFields();
             for (PsiField subPsiField : allFields) {
@@ -176,15 +174,15 @@ public class PsiTypeResolverHelper {
      * @return
      */
     public static PsiType handleCollectionType(PsiType psiType) {
-        if (!(psiType instanceof PsiClassReferenceType)) {
+        if (!(psiType instanceof PsiClassType)) {
             return psiType;
         }
         PsiType trueType = psiType;
         if (isArray(psiType)) {
             trueType =  handleArrayType(psiType);
-        } else if (isList((PsiClassReferenceType) psiType) || isSet((PsiClassReferenceType) psiType)) {
+        } else if (isList((PsiClassType) psiType) || isSet((PsiClassType) psiType)) {
             trueType = handleListOrSetType(psiType);
-        } else if (isMap((PsiClassReferenceType) psiType)) {
+        } else if (isMap((PsiClassType) psiType)) {
             trueType = handleMapValueType(psiType);
         } else { // 如果trueType不是array、set、list、map，则返回
             return trueType;
@@ -199,10 +197,10 @@ public class PsiTypeResolverHelper {
      * @return
      */
     public static PsiType handleMapValueType(PsiType psiTypeMap) {
-        if (!isMap((PsiClassReferenceType) psiTypeMap)) {
+        if (!isMap((PsiClassType) psiTypeMap)) {
             return psiTypeMap;
         }
-        return ((PsiClassReferenceType) psiTypeMap).getParameters()[1];
+        return ((PsiClassType) psiTypeMap).getParameters()[1];
     }
 
     /**
@@ -233,10 +231,10 @@ public class PsiTypeResolverHelper {
      */
     @NonNull
     public static PsiType handleListOrSetType(PsiType psiType) {
-        if (!isList((PsiClassReferenceType) psiType) && !isSet((PsiClassReferenceType) psiType)) {
+        if (!isList((PsiClassType) psiType) && !isSet((PsiClassType) psiType)) {
             return psiType;
         }
-        return ((PsiClassReferenceType) psiType).getParameters()[0];
+        return ((PsiClassType) psiType).getParameters()[0];
     }
 
     /**
@@ -253,7 +251,7 @@ public class PsiTypeResolverHelper {
      * @param psiType
      * @return
      */
-    public static boolean isList(@NonNull PsiClassReferenceType psiType) {
+    public static boolean isList(@NonNull PsiClassType psiType) {
         return isImplementedOneClass(psiType, JAVA_UTIL_LIST);
     }
 
@@ -262,7 +260,7 @@ public class PsiTypeResolverHelper {
      * @param psiType
      * @return
      */
-    public static boolean isMap(@NonNull PsiClassReferenceType psiType) {
+    public static boolean isMap(@NonNull PsiClassType psiType) {
         return isImplementedOneClass(psiType, JAVA_UTIL_MAP);
     }
 
@@ -271,7 +269,7 @@ public class PsiTypeResolverHelper {
      * @param psiType
      * @return
      */
-    public static boolean isSet(@NonNull PsiClassReferenceType psiType) {
+    public static boolean isSet(@NonNull PsiClassType psiType) {
         return isImplementedOneClass(psiType, JAVA_UTIL_SET);
     }
 
@@ -281,7 +279,7 @@ public class PsiTypeResolverHelper {
      * @param qualifiedNameOfInterface
      * @return
      */
-    public static boolean isImplementedOneClass(@NonNull PsiClassReferenceType psiType, String qualifiedNameOfInterface) {
+    public static boolean isImplementedOneClass(@NonNull PsiClassType psiType, String qualifiedNameOfInterface) {
         if (qualifiedNameOfInterface.equals(psiType.resolve().getQualifiedName())) {
             return true;
         }

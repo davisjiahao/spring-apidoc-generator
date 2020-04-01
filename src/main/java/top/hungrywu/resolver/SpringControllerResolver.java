@@ -183,65 +183,9 @@ public class SpringControllerResolver extends BaseResolver {
         // todo 设置协议名称
         apiDetailRet.setProtocolName(RequestConfig.DEFAULT_PROTOCOL_TYPE);
 
-        Map<String, ParamInfo> paramJavaDocInfos = PsiCommentResolverHelper.getParamInfoInJavaDoc(commentOnMethod);
 
         // 4、解析函数参数
-        PsiParameterList parameterList = psiMethod.getParameterList();
-        PsiParameter[] parameters = parameterList.getParameters();
-        List<ParamDetail> wrappedParamDetails = new ArrayList<>();
-        List<ParamDetail> nonWrappedParamDetails = new ArrayList<>();
-        for (PsiParameter psiParameter : parameters) {
-            ParamInfo paramInfo = paramJavaDocInfos.get(psiParameter.getName());
-            ParamDetail paramDetail = PsiMethodResolverHelper.parseParamOfMethod(psiParameter, paramInfo);
-            if (Objects.isNull(paramDetail)) {
-                continue;
-            }
-            boolean wrapped = RequestConfig.defaultWrapped;
-            if (Objects.nonNull(paramInfo)) {
-                wrapped = paramInfo.isRequestWrapped();
-            }
-            if (wrapped) {
-                wrappedParamDetails.add(paramDetail);
-            } else {
-                nonWrappedParamDetails.add(paramDetail);
-            }
-        }
-
-        boolean wrapped = StringUtils.containsIgnoreCase(
-                PsiCommentResolverHelper.getNonParamTagValueInJavaDoc(psiMethod.getDocComment(),
-                        PsiCommentResolverHelper.REQUEST_WRAPPED_NAME_TAG_NAME_IN_JAVADOC), "true");
-        if (CollectionUtils.isEmpty(wrappedParamDetails) && !wrapped) {
-            apiDetailRet.setParams(nonWrappedParamDetails);
-        } else {
-            List<ParamDetail> paramDetails = new ArrayList<>();
-            paramDetails.addAll(nonWrappedParamDetails);
-            for (ParamDetail requestParam : RequestConfig.wrappedRequestParams) {
-                if (Objects.nonNull(requestParam.getSubTypeInfos())) {
-                    ParamDetail trueDta = new ParamDetail();
-                    trueDta.setDescription(requestParam.getDescription());
-                    trueDta.setName(requestParam.getName());
-                    trueDta.setRequired(requestParam.isRequired());
-                    trueDta.setTypeName(requestParam.getTypeName());
-                    trueDta.setTypeName4TableTitle(requestParam.getTypeName4TableTitle());
-                    trueDta.setSubTypeInfos(new ArrayList<>());
-                    if (wrappedParamDetails.size() == 1) {
-                        trueDta.setTypeName(wrappedParamDetails.get(0).getTypeName());
-                        trueDta.setTypeName4TableTitle(wrappedParamDetails.get(0).getTypeName4TableTitle());
-                        trueDta.setSubTypeInfos(wrappedParamDetails.get(0).getSubTypeInfos());
-                    } else if (wrappedParamDetails.size() == 0) {
-                        trueDta.setTypeName("{}");
-                    } else {
-                        for (ParamDetail wrappedParamDetail : wrappedParamDetails) {
-                            trueDta.getSubTypeInfos().add(wrappedParamDetail);
-                        }
-                    }
-                    paramDetails.add(trueDta);
-                } else {
-                    paramDetails.add(requestParam);
-                }
-            }
-            apiDetailRet.setParams(paramDetails);
-        }
+        PsiMethodResolverHelper.parseParam(apiDetailRet, psiMethod, commentOnMethod);
 
 
         // 5、解析函数返回值
