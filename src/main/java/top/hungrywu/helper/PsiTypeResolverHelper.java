@@ -4,6 +4,8 @@ import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.util.text.DateFormatUtil;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.assertj.core.annotations.NonNull;
 import org.jetbrains.annotations.Nullable;
 import top.hungrywu.bean.BaseInfo;
@@ -27,12 +29,14 @@ public class PsiTypeResolverHelper {
         hadResolvedInfo.clear();
     }
 
-    public static void parsePsiType(BaseInfo baseInfo, PsiType psiType, Stack<String> types) {
+    public static void parsePsiType(BaseInfo baseInfo, PsiType psiType,
+                                    Stack<String> types, Map<String, PsiType> trueTypeMap ) {
 
         baseInfo.setTypeName(psiType.getPresentableText());
 
         // 获取list、set、array、map里的实际类型
         psiType = handleCollectionType(psiType);
+        baseInfo.setTypeName4TableTitle(psiType.getPresentableText());
 
         // 如果该类型已经解析过了
         if (hadResolvedInfo.containsKey(psiType.getCanonicalText())) {
@@ -60,19 +64,33 @@ public class PsiTypeResolverHelper {
         }
         types.push(psiType.getCanonicalText());
 
+        String psiTypeKey = psiType.getCanonicalText();
+
         // 如果是自定义类型
         List<BaseInfo> baseInfoList = new ArrayList<>();
         PsiSubstitutor psiSubstitutor;
+//        Map<String, PsiType> trueTypeMap = new HashMap<>();
         PsiClass psiClass;
         do {
             psiSubstitutor = ((PsiClassReferenceType) psiType).resolveGenerics().getSubstitutor();
+            if (Objects.nonNull(psiSubstitutor) && MapUtils.isNotEmpty(psiSubstitutor.getSubstitutionMap())) {
+                (psiSubstitutor.getSubstitutionMap()).forEach((genericParamType, trueType) -> {
+                    if (Objects.nonNull(trueType) && !Objects.equals(genericParamType.getName(), trueType.getPresentableText())) {
+                        trueTypeMap.put(genericParamType.getName(), trueType);
+                    }
+                });
+            }
             psiClass = ((PsiClassReferenceType) psiType).resolve();
 
             PsiField[] allFields = psiClass.getFields();
             for (PsiField subPsiField : allFields) {
 
                 BaseInfo subBaseInfo = new BaseInfo();
-                PsiType subTruePsiType = psiSubstitutor.substitute(subPsiField.getType());
+
+                PsiType subTruePsiType = subPsiField.getType();
+                if (trueTypeMap.containsKey(subPsiField.getType().getPresentableText())) {
+                    subTruePsiType = trueTypeMap.get(subPsiField.getType().getPresentableText());
+                }
 
                 // 0、解析基本信息
                 subBaseInfo.setName(subPsiField.getName());
@@ -83,8 +101,7 @@ public class PsiTypeResolverHelper {
 
                 // 2、解析psiField 的注解信息 todo
 
-
-                parsePsiType(subBaseInfo, subTruePsiType, types);
+                parsePsiType(subBaseInfo, subTruePsiType, types, trueTypeMap);
 
                 baseInfoList.add(subBaseInfo);
             }
@@ -97,7 +114,7 @@ public class PsiTypeResolverHelper {
         } while (true);
 
         baseInfo.setSubTypeInfos(baseInfoList);
-        hadResolvedInfo.put(psiType.getCanonicalText(), baseInfoList);
+        hadResolvedInfo.put(psiTypeKey, baseInfoList);
         types.pop();
     }
 

@@ -36,4 +36,9 @@ public class DescriptionDetail {
      * 版本信息
      */
     private String version;
+
+    /**
+     * content-type
+     */
+    private String requestContentType;
 }

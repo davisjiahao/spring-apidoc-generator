@@ -1,16 +1,13 @@
 package top.hungrywu.resolver;
 
-import com.google.common.collect.Lists;
 import com.intellij.psi.*;
 import com.intellij.psi.javadoc.PsiDocComment;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.assertj.core.annotations.NonNull;
-import top.hungrywu.bean.ApiDetail;
-import top.hungrywu.bean.DescriptionDetail;
-import top.hungrywu.bean.ParamDetail;
-import top.hungrywu.bean.ReturnDetail;
+import top.hungrywu.bean.*;
+import top.hungrywu.config.RequestConfig;
 import top.hungrywu.enums.annotations.SpringControllerAnnotation;
 import top.hungrywu.enums.annotations.SpringRequestMethodAnnotation;
 import top.hungrywu.helper.PsiCommentResolverHelper;
@@ -81,7 +78,7 @@ public class SpringControllerResolver extends BaseResolver {
                 // todo error
                 continue;
             }
-            if (pathListOnClass.size() != 0) {
+            if (CollectionUtils.isNotEmpty(pathListOnClass)) {
                 List<String> fullBaseUrls = new ArrayList<>();
                 // 拼接url
                 for (String pathOnClass : pathListOnClass) {
@@ -92,13 +89,18 @@ public class SpringControllerResolver extends BaseResolver {
                 apiDetail.setBaseUrl(fullBaseUrls);
             }
 
-            if (!CollectionUtils.isEmpty(apiDetail.getMethodType()) && CollectionUtils.isEmpty(methodTypeListOnClass)) {
+            if (CollectionUtils.isEmpty(apiDetail.getMethodType()) && !CollectionUtils.isEmpty(methodTypeListOnClass)) {
                 apiDetail.setMethodType(methodTypeListOnClass);
             }
             if (CollectionUtils.isEmpty(apiDetail.getMethodType())) {
                 // todo 如果进行到这里 methodType还是为空，需要指定默认的methodType
             }
-
+            for (int i = 0; i < apiDetail.getMethodType().size(); i++) {
+                // 去掉methodTypeqian前缀
+                if (apiDetail.getMethodType().get(i).contains(".")) {
+                    apiDetail.getMethodType().set(i, apiDetail.getMethodType().get(i).substring(apiDetail.getMethodType().get(i).lastIndexOf('.') + 1));
+                }
+            }
             apiDetails.add(apiDetail);
         }
 
@@ -110,7 +112,7 @@ public class SpringControllerResolver extends BaseResolver {
                                            @NonNull List<String> pathListOnClass) {
         PsiAnnotation requestMappingAnnotation = null;
         for (PsiAnnotation classPsiAnnotation : classAnnotations) {
-            if (Objects.equals(classPsiAnnotation.getQualifiedName(), SpringRequestMethodAnnotation.REQUEST_MAPPING)) {
+            if (Objects.equals(classPsiAnnotation.getQualifiedName(), SpringRequestMethodAnnotation.REQUEST_MAPPING.getQualifiedName())) {
                 requestMappingAnnotation = classPsiAnnotation;
                 break;
             }
@@ -121,7 +123,7 @@ public class SpringControllerResolver extends BaseResolver {
         } else {
             methodTypeListOnClass.addAll(PsiAnnotationResolverHelper.getAnnotationAttributeValues(requestMappingAnnotation, METHOD_ATTR_NAME));
             // 获取class级别的RequestPath注解上的value属性的值
-            pathListOnClass = PsiAnnotationResolverHelper.getAnnotationAttributeValues(requestMappingAnnotation, VALUE_ATTR_NAME);
+            pathListOnClass.addAll(PsiAnnotationResolverHelper.getAnnotationAttributeValues(requestMappingAnnotation, VALUE_ATTR_NAME));
             if (pathListOnClass.size() == 0) {
                 pathListOnClass.addAll(PsiAnnotationResolverHelper.getAnnotationAttributeValues(requestMappingAnnotation, PATH_ATTR_NAME));
             }
@@ -137,11 +139,16 @@ public class SpringControllerResolver extends BaseResolver {
             return null;
         }
 
+        // 1.1 如果有apiIgnore标识，则忽略
+        if (PsiCommentResolverHelper.existedTag(psiMethod.getDocComment(), PsiCommentResolverHelper.API_PARSER_IGNORE)) {
+            return null;
+        }
+
         ApiDetail apiDetailRet = new ApiDetail();
 
         // 2、解析函数级别上的spring注解
         List<String> methodTypeListOnMethod;
-        List<String> pathListOnClass;
+        List<String> pathListOnMethod;
         SpringRequestMethodAnnotation requestMethodAnnotation = SpringRequestMethodAnnotation.getByQualifiedName(springAnnotationOnMethod.getQualifiedName());
         if (requestMethodAnnotation.getQualifiedName().equals(SpringRequestMethodAnnotation.REQUEST_MAPPING.getQualifiedName())) {
             // 获取method级别的RequestPath注解上的method属性的值
@@ -151,11 +158,11 @@ public class SpringControllerResolver extends BaseResolver {
             methodTypeListOnMethod.add(requestMethodAnnotation.methodName());
         }
         // 获取method级别的RequestPath注解上的value属性的值,即baseurlpath
-        pathListOnClass = PsiAnnotationResolverHelper.getAnnotationAttributeValues(springAnnotationOnMethod, VALUE_ATTR_NAME);
-        if (pathListOnClass.size() == 0) {
-            pathListOnClass = PsiAnnotationResolverHelper.getAnnotationAttributeValues(springAnnotationOnMethod, PATH_ATTR_NAME);
+        pathListOnMethod = PsiAnnotationResolverHelper.getAnnotationAttributeValues(springAnnotationOnMethod, VALUE_ATTR_NAME);
+        if (pathListOnMethod.size() == 0) {
+            pathListOnMethod = PsiAnnotationResolverHelper.getAnnotationAttributeValues(springAnnotationOnMethod, PATH_ATTR_NAME);
         }
-        apiDetailRet.setBaseUrl(pathListOnClass);
+        apiDetailRet.setBaseUrl(pathListOnMethod);
         apiDetailRet.setMethodType(methodTypeListOnMethod);
 
         // 3、解析函数级别上的javadoc信息
@@ -170,18 +177,72 @@ public class SpringControllerResolver extends BaseResolver {
         if (StringUtils.isNotEmpty(methodDescriptionDetail.getDescription())) {
             apiDetailRet.setDescription(methodDescriptionDetail.getDescription());
         }
-        Map<String, String> paramJavaDocInfos = PsiCommentResolverHelper.getParamTagValuesInJavaDoc(commentOnMethod);
+
+        // todo 解析content-type
+        apiDetailRet.setContentType(RequestConfig.DEFAULT_REQUEST_CONTENT_TYPE);
+        // todo 设置协议名称
+        apiDetailRet.setProtocolName(RequestConfig.DEFAULT_PROTOCOL_TYPE);
+
+        Map<String, ParamInfo> paramJavaDocInfos = PsiCommentResolverHelper.getParamInfoInJavaDoc(commentOnMethod);
 
         // 4、解析函数参数
         PsiParameterList parameterList = psiMethod.getParameterList();
-        List<ParamDetail> paramDetails = Lists.newArrayListWithExpectedSize(parameterList.getParametersCount());
         PsiParameter[] parameters = parameterList.getParameters();
+        List<ParamDetail> wrappedParamDetails = new ArrayList<>();
+        List<ParamDetail> nonWrappedParamDetails = new ArrayList<>();
         for (PsiParameter psiParameter : parameters) {
-            ParamDetail paramDetail = PsiMethodResolverHelper.parseParamOfMethod(psiParameter);
-            paramDetail.setDescription(paramJavaDocInfos.get(psiParameter.getName()));
-            paramDetails.add(paramDetail);
+            ParamInfo paramInfo = paramJavaDocInfos.get(psiParameter.getName());
+            ParamDetail paramDetail = PsiMethodResolverHelper.parseParamOfMethod(psiParameter, paramInfo);
+            if (Objects.isNull(paramDetail)) {
+                continue;
+            }
+            boolean wrapped = RequestConfig.defaultWrapped;
+            if (Objects.nonNull(paramInfo)) {
+                wrapped = paramInfo.isRequestWrapped();
+            }
+            if (wrapped) {
+                wrappedParamDetails.add(paramDetail);
+            } else {
+                nonWrappedParamDetails.add(paramDetail);
+            }
         }
-        apiDetailRet.setParams(paramDetails);
+
+        boolean wrapped = StringUtils.containsIgnoreCase(
+                PsiCommentResolverHelper.getNonParamTagValueInJavaDoc(psiMethod.getDocComment(),
+                        PsiCommentResolverHelper.REQUEST_WRAPPED_NAME_TAG_NAME_IN_JAVADOC), "true");
+        if (CollectionUtils.isEmpty(wrappedParamDetails) && !wrapped) {
+            apiDetailRet.setParams(nonWrappedParamDetails);
+        } else {
+            List<ParamDetail> paramDetails = new ArrayList<>();
+            paramDetails.addAll(nonWrappedParamDetails);
+            for (ParamDetail requestParam : RequestConfig.wrappedRequestParams) {
+                if (Objects.nonNull(requestParam.getSubTypeInfos())) {
+                    ParamDetail trueDta = new ParamDetail();
+                    trueDta.setDescription(requestParam.getDescription());
+                    trueDta.setName(requestParam.getName());
+                    trueDta.setRequired(requestParam.isRequired());
+                    trueDta.setTypeName(requestParam.getTypeName());
+                    trueDta.setTypeName4TableTitle(requestParam.getTypeName4TableTitle());
+                    trueDta.setSubTypeInfos(new ArrayList<>());
+                    if (wrappedParamDetails.size() == 1) {
+                        trueDta.setTypeName(wrappedParamDetails.get(0).getTypeName());
+                        trueDta.setTypeName4TableTitle(wrappedParamDetails.get(0).getTypeName4TableTitle());
+                        trueDta.setSubTypeInfos(wrappedParamDetails.get(0).getSubTypeInfos());
+                    } else if (wrappedParamDetails.size() == 0) {
+                        trueDta.setTypeName("{}");
+                    } else {
+                        for (ParamDetail wrappedParamDetail : wrappedParamDetails) {
+                            trueDta.getSubTypeInfos().add(wrappedParamDetail);
+                        }
+                    }
+                    paramDetails.add(trueDta);
+                } else {
+                    paramDetails.add(requestParam);
+                }
+            }
+            apiDetailRet.setParams(paramDetails);
+        }
+
 
         // 5、解析函数返回值
         PsiTypeElement returnType = psiMethod.getReturnTypeElement();
@@ -189,7 +250,7 @@ public class SpringControllerResolver extends BaseResolver {
         ReturnDetail returnDetail = new ReturnDetail();
         returnDetail.setTypeName(type.getPresentableText());
         apiDetailRet.setResult(returnDetail);
-        PsiTypeResolverHelper.parsePsiType(returnDetail, type, new Stack<>());
+        PsiTypeResolverHelper.parsePsiType(returnDetail, type, new Stack<>(), new HashMap<>());
 
         return apiDetailRet;
     }

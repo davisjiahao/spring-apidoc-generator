@@ -1,6 +1,7 @@
 package top.hungrywu.bean;
 
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.util.List;
 
@@ -11,6 +12,7 @@ import java.util.List;
  * @Version 1.0
  **/
 @Data
+@Accessors(chain = true)
 public class BaseInfo {
     /**
      * 参数标识
@@ -21,6 +23,9 @@ public class BaseInfo {
      * 参数类型名称
      */
     private String typeName;
+
+
+    private String typeName4TableTitle;
 
     /**
      * 该参数是否可选

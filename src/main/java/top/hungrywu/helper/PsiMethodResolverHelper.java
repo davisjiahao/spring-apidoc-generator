@@ -3,6 +3,7 @@ package top.hungrywu.helper;
 import com.intellij.psi.*;
 import top.hungrywu.bean.BaseInfo;
 import top.hungrywu.bean.ParamDetail;
+import top.hungrywu.bean.ParamInfo;
 import top.hungrywu.enums.IgnoreParsingParaTypeEnum;
 import top.hungrywu.enums.annotations.SpringRequestParamAnnotations;
 
@@ -23,34 +24,45 @@ public class PsiMethodResolverHelper {
      * @param psiParameter
      * @return
      */
-    public static ParamDetail parseParamOfMethod(PsiParameter psiParameter) {
+    public static ParamDetail parseParamOfMethod(PsiParameter psiParameter, ParamInfo paramInfoInDoc) {
 
         String qualifiedTypeName = psiParameter.getType().getCanonicalText();
         if (IgnoreParsingParaTypeEnum.getByQualifiedName(qualifiedTypeName) != null) {
             return null;
         }
+        if (Objects.isNull(paramInfoInDoc)) {
+            // todo error log
+        }
 
         ParamDetail paramDetail = new ParamDetail();
 
         // 解析参数自身的信息
-        parseBaseInfoOfParam(psiParameter, paramDetail);
+        parseBaseInfoOfParam(psiParameter, paramDetail, paramInfoInDoc);
 
         // 解析参数的注解上的信息
         parseBaseInfoVisParamAnnotation(psiParameter, paramDetail);
 
+        // 解析JavaDoc上的参数信息
+        if (!Objects.isNull(paramInfoInDoc)) {
+            paramDetail.setDescription(paramInfoInDoc.getDescription());
+        }
+
         return paramDetail;
     }
 
-    public static void parseBaseInfoOfParam(PsiParameter psiParameter, BaseInfo paramInfo) {
+    public static void parseBaseInfoOfParam(PsiParameter psiParameter, BaseInfo paramInfo, ParamInfo paramInfoInDoc) {
 
         PsiType psiType = psiParameter.getType();
+        if (Objects.nonNull(paramInfoInDoc) && Objects.nonNull(paramInfoInDoc.getParaType())) {
+            psiType = paramInfoInDoc.getParaType();
+        }
 
         String paraName = psiParameter.getName();
         String typeName = psiType.getPresentableText();
         paramInfo.setName(paraName);
         paramInfo.setTypeName(typeName);
 
-        PsiTypeResolverHelper.parsePsiType(paramInfo, psiType, new Stack<>());
+        PsiTypeResolverHelper.parsePsiType(paramInfo, psiType, new Stack<>(), new HashMap<>());
     }
 
 
@@ -61,7 +73,7 @@ public class PsiMethodResolverHelper {
         PsiAnnotation requestBodyAnnotation = psiParameter.getAnnotation(
                 SpringRequestParamAnnotations.REQUEST_BODY.getQualifiedName());
         if (!Objects.isNull(requestBodyAnnotation)) {
-            paramInfo.setParamType(SpringRequestParamAnnotations.REQUEST_BODY.getShortName());
+            paramInfo.setParamRequestType(SpringRequestParamAnnotations.REQUEST_BODY.getShortName());
             paramInfo.setRequired(true);
         }
 
@@ -69,7 +81,7 @@ public class PsiMethodResolverHelper {
         PsiAnnotation requestParamAnnotation = psiParameter.getAnnotation(
                 SpringRequestParamAnnotations.REQUEST_PARAM.getQualifiedName());
         if (!Objects.isNull(requestParamAnnotation)) {
-            paramInfo.setParamType(SpringRequestParamAnnotations.REQUEST_PARAM.getShortName());
+            paramInfo.setParamRequestType(SpringRequestParamAnnotations.REQUEST_PARAM.getShortName());
             paramInfo.setRequired("true".equals(PsiAnnotationResolverHelper.
                     getAnnotationAttributeValue(requestParamAnnotation, "required")));
         }

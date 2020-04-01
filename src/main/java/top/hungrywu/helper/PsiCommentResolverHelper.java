@@ -1,12 +1,16 @@
 package top.hungrywu.helper;
 
-import com.intellij.psi.PsiElement;
+import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind;
+import com.intellij.psi.*;
+import com.intellij.psi.impl.source.tree.java.PsiKeywordImpl;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.sun.istack.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.assertj.core.annotations.NonNull;
 import top.hungrywu.bean.DescriptionDetail;
+import top.hungrywu.bean.ParamInfo;
+import top.hungrywu.config.RequestConfig;
 
 import java.util.*;
 import java.util.function.Function;
@@ -26,6 +30,12 @@ public class PsiCommentResolverHelper {
     public final static String VERSION_NAME_TAG_NAME_IN_JAVADOC = "version";
 
     public final static String PARAM_NAME_TAG_NAME_IN_JAVADOC = "param";
+    public final static String SEE_NAME_TAG_NAME_IN_JAVADOC = "see";
+    public final static String REQUEST_WRAPPED_NAME_TAG_NAME_IN_JAVADOC = "wrapped";
+
+    public final static String REQUEST_CONTENT_TYPE_TAG_NAME_IN_JAVADOC = "requestContentType";
+
+    public final static String API_PARSER_IGNORE = "apiIgnore";
 
     /**
      * 解析javadoc注释中的描述信息
@@ -49,6 +59,8 @@ public class PsiCommentResolverHelper {
         descriptionDetail.setCreateTime(getNonParamTagValueInJavaDoc(psiDocComment, DATE_NAME_TAG_NAME_IN_JAVADOC));
 
         descriptionDetail.setVersion(getNonParamTagValueInJavaDoc(psiDocComment, VERSION_NAME_TAG_NAME_IN_JAVADOC));
+
+        descriptionDetail.setRequestContentType(getNonParamTagValueInJavaDoc(psiDocComment, REQUEST_CONTENT_TYPE_TAG_NAME_IN_JAVADOC));
 
 
         return descriptionDetail;
@@ -79,8 +91,8 @@ public class PsiCommentResolverHelper {
      * @return
      */
     @NonNull
-    private static Map<String, String> getTagValuesInJavaDoc(PsiDocComment psiDocComment, String tagName,
-                                                     Function<PsiDocTag[], Map<String, String>> tagsHandler) {
+    private static Map<String, ParamInfo> getTagValuesInJavaDoc(PsiDocComment psiDocComment, String tagName,
+                                                     Function<PsiDocTag[], Map<String, ParamInfo>> tagsHandler) {
         if (Objects.isNull(psiDocComment)) {
             return Collections.emptyMap();
         }
@@ -99,34 +111,86 @@ public class PsiCommentResolverHelper {
         return tagsHandler.apply(tags);
     }
 
+    public static boolean existedTag(PsiDocComment psiDocComment, String tagName) {
+        if (Objects.isNull(psiDocComment)) {
+            return false;
+        }
+        PsiDocTag[] tags = psiDocComment.findTagsByName(tagName);
+        if (null == tags || tags.length == 0) {
+            return false;
+        }
+        return true;
+    }
+
     @NonNull
     public static String getNonParamTagValueInJavaDoc(PsiDocComment psiDocComment, String tagName) {
         tagName = tagName.trim();
         String finalTagName = tagName;
-        Map<String, String> res = getTagValuesInJavaDoc(psiDocComment, tagName,
-                psiDocTags -> {
-                    Map<String, String> value = new HashMap<>();
-                    StringBuffer stringBuffer = new StringBuffer();
-                    for (PsiDocTag tag : psiDocTags) {
-                        PsiElement[] dataElements = tag.getDataElements();
-                        for (int i = 0; i < dataElements.length; i++) {
-                            stringBuffer.append(" " + dataElements[i].getText().trim());
-                        }
-                    }
-                    value.put(finalTagName, stringBuffer.toString());
-                    return value;
-                });
-        if (res.isEmpty() || !res.containsKey(tagName)) {
+
+        if (Objects.isNull(psiDocComment)) {
             return "";
         }
-        return res.get(tagName);
+        if (StringUtils.isEmpty(tagName)) {
+            return "";
+        }
+        tagName = tagName.toLowerCase();
+        PsiDocTag[] tags = psiDocComment.findTagsByName(tagName);
+        if (null == tags || tags.length == 0) {
+            tags = psiDocComment.findTagsByName(tagName.substring(0, 1).toLowerCase() + tagName.substring(1));
+            if (null == tags || tags.length == 0) {
+                return "";
+            }
+        }
+        StringBuffer stringBuffer = new StringBuffer();
+        for (PsiDocTag tag : tags) {
+            PsiElement[] dataElements = tag.getDataElements();
+            for (int i = 0; i < dataElements.length; i++) {
+                stringBuffer.append(" " + dataElements[i].getText().trim());
+            }
+        }
+        return stringBuffer.toString();
     }
 
-    public static Map<String, String> getParamTagValuesInJavaDoc(PsiDocComment psiDocComment) {
+    public static Map<String, ParamInfo> getParamInfoInJavaDoc(PsiDocComment psiDocComment) {
         return getTagValuesInJavaDoc(psiDocComment, PARAM_NAME_TAG_NAME_IN_JAVADOC,
                 psiDocTags -> {
-                    Map<String, String> params = new HashMap<>();
+                    Map<String, ParamInfo> params = new HashMap<>();
                     for (PsiDocTag tag : psiDocTags) {
+                        ParamInfo paramInfo = new ParamInfo();
+
+                        PsiDocTag requestWrappedTag = parseWrappedTagBehindOfParaTag(tag);
+                        if (Objects.isNull(requestWrappedTag)) {
+                            paramInfo.setRequestWrapped(RequestConfig.defaultWrapped);
+                        } else {
+                            String requestWrappedStr = requestWrappedTag.getValueElement().getText().trim();
+                            if (StringUtils.containsIgnoreCase(requestWrappedStr, "true")) {
+                                paramInfo.setRequestWrapped(true);
+                            } else if (StringUtils.containsIgnoreCase(requestWrappedStr, "false")) {
+                                paramInfo.setRequestWrapped(false);
+                            } else {
+                                paramInfo.setRequestWrapped(RequestConfig.defaultWrapped);
+                            }
+                        }
+
+                        PsiDocTag seeDocTag = parseSeeTagBehindOfParaTag(tag);
+                        PsiType type = null;
+                        if (!Objects.isNull(seeDocTag)) {
+                            for (PsiElement dataElement : seeDocTag.getDataElements()) {
+                                if (!Objects.isNull(dataElement.getFirstChild())) {
+                                    if (dataElement.getFirstChild() instanceof PsiJavaCodeReferenceElement) {
+                                        PsiElement psiElement = ((PsiJavaCodeReferenceElement) (dataElement.getFirstChild())).resolve();
+                                        type = JavaPsiFacade.getInstance(psiElement.getProject()).getElementFactory().createType((PsiClass) psiElement);
+                                    } else if (dataElement.getFirstChild() instanceof PsiKeywordImpl) {
+                                        JvmPrimitiveTypeKind kindByName = JvmPrimitiveTypeKind.getKindByName(((PsiKeywordImpl) dataElement.getFirstChild()).getText());
+                                        if (!Objects.isNull(kindByName)) {
+                                            type = new PsiPrimitiveType(kindByName, new PsiAnnotation[0]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        paramInfo.setParaType(type);
+
                         StringBuffer stringBuffer = new StringBuffer();
                         PsiElement[] dataElements = tag.getDataElements();
                         if (dataElements.length == 0 || StringUtils.isEmpty(dataElements[0].getText().trim())) {
@@ -136,10 +200,43 @@ public class PsiCommentResolverHelper {
                         for (int i = 1; i < dataElements.length; i++) {
                             stringBuffer.append(dataElements[i].getText().trim());
                         }
-                        params.put(paramName, stringBuffer.toString());
+                        paramInfo.setDescription(stringBuffer.toString());
+
+                        paramInfo.setParamName(paramName);
+
+                        params.put(paramName, paramInfo);
                     }
                     return params;
                 });
+    }
+    
+    
+    public static PsiDocTag parseSeeTagBehindOfParaTag(PsiDocTag tag) {
+        return parseFirstTagBehindOfParaTag(tag, SEE_NAME_TAG_NAME_IN_JAVADOC);
+
+    }
+
+    public static PsiDocTag parseWrappedTagBehindOfParaTag(PsiDocTag tag) {
+        return parseFirstTagBehindOfParaTag(tag, REQUEST_WRAPPED_NAME_TAG_NAME_IN_JAVADOC);
+    }
+
+    private static PsiDocTag parseFirstTagBehindOfParaTag(PsiDocTag tag, String tagTypeName) {
+        if (!Objects.equals(tag.getName(), PARAM_NAME_TAG_NAME_IN_JAVADOC)) {
+            return null;
+        }
+        PsiElement nextSibling = tag.getNextSibling();
+        while (!Objects.isNull(nextSibling)) {
+            if (nextSibling instanceof PsiDocTag) {
+                if (Objects.equals(((PsiDocTag)nextSibling).getName(), PARAM_NAME_TAG_NAME_IN_JAVADOC)) {
+                    break;
+                }
+                if (Objects.equals(((PsiDocTag)nextSibling).getName(), tagTypeName)) {
+                    return (PsiDocTag) nextSibling;
+                }
+            }
+            nextSibling = nextSibling.getNextSibling();
+        }
+        return null;
     }
 
 }

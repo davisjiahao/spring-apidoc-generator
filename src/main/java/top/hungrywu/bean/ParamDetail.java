@@ -3,6 +3,7 @@ package top.hungrywu.bean;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import lombok.experimental.Accessors;
 
 /**
  * @Description api 参数描述类
@@ -13,9 +14,10 @@ import lombok.ToString;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @Data
+@Accessors(chain = true)
 public class ParamDetail extends BaseInfo {
     /**
      * 参数类型
      */
-    private String paramType;
+    private String paramRequestType;
 }

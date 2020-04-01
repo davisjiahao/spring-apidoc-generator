@@ -44,7 +44,7 @@ public class KiwiServiceTest {
 
     @Test
     public void testQueryAllPagesUnderOnePage() throws Exception {
-        kiwiService.queryAllPagesUnderOnePage(KiwiConfig.KIWI_ANCESTOR_ID);
+        kiwiService.queryAllPagesUnderOnePage("343063546");
     }
 
 }

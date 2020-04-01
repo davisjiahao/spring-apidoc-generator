@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.sun.istack.Nullable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -19,6 +20,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.assertj.core.annotations.NonNull;
 import top.hungrywu.bean.ApiDetail;
 import top.hungrywu.bean.ApiDoc;
+import top.hungrywu.bean.BaseInfo;
 import top.hungrywu.bean.kiwi.UpdateKiwiPageRequestData;
 import top.hungrywu.bean.kiwi.WikiPageResponse;
 import top.hungrywu.bean.kiwi.NewWikiPageRequestData;
@@ -27,10 +29,7 @@ import top.hungrywu.config.KiwiConfig;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -126,7 +125,7 @@ public class KiwiService {
      **/
     private WikiPageResponse updateApi2ExistedPage(ApiDetail apiDetail, WikiPageResponse wikiPageResponse) throws Exception {
         String content = buildApiDetailKiwiPageContent(apiDetail);
-        String title = apiDetail.getAuthor() + ":" + StringUtils.join(apiDetail.getBaseUrl(), "|");
+        String title = apiDetail.getDescription() + ":" + StringUtils.join(apiDetail.getBaseUrl(), "|");
         String pageId = wikiPageResponse.getId();
         int versionNum = wikiPageResponse.getVersion().getNumber();
 
@@ -134,16 +133,6 @@ public class KiwiService {
 
     }
 
-    /***
-     *
-     * @author : daviswujiahao
-     * @date : 2020/3/27 2:20 下午
-     * @param apiDetail :
-     * @return : java.lang.String
-     **/
-    private String buildApiDetailKiwiPageContent(ApiDetail apiDetail) {
-        return "todo";
-    }
 
     /**
      *
@@ -155,7 +144,7 @@ public class KiwiService {
      **/
     private WikiPageResponse buildApi2NewPage(String kiwiAncestorsId, ApiDetail apiDetail) throws Exception {
         String content = buildApiDetailKiwiPageContent(apiDetail);
-        String title = apiDetail.getAuthor() + ":" + StringUtils.join(apiDetail.getBaseUrl(), "|");
+        String title = apiDetail.getDescription() + ":" + StringUtils.join(apiDetail.getBaseUrl(), "|");
         return createNewKiwiPage(title, content);
     }
 
@@ -315,6 +304,97 @@ public class KiwiService {
             httpClient.close();
         }
     }
+
+    /***
+     *
+     * @author : daviswujiahao
+     * @date : 2020/3/27 2:20 下午
+     * @param apiDetail :
+     * @return : java.lang.String
+     **/
+    private String buildApiDetailKiwiPageContent(@NonNull ApiDetail apiDetail) {
+
+        String apiName = StringUtils.defaultIfEmpty(apiDetail.getDescription(), "");
+        String apiBaseUrl = StringUtils.defaultIfEmpty(StringUtils.join(apiDetail.getBaseUrl(), "|"), "");
+        String protocolName = StringUtils.defaultIfEmpty(apiDetail.getProtocolName(), "");
+        String apiMethod = StringUtils.defaultIfEmpty(StringUtils.join(apiDetail.getMethodType(), "|"), "");
+        String contentType = StringUtils.defaultIfEmpty(apiDetail.getContentType(), "");
+
+        StringBuffer content = new StringBuffer();
+
+        // 基本信息
+        content.append(String.format(KiwiConfig.WIKI_API_DOC_INDEX_PAGE_CONTENT_TITLE_TEMPLATE, "接口描述", apiName));
+        content.append(String.format(KiwiConfig.WIKI_API_DOC_INDEX_PAGE_CONTENT_TITLE_TEMPLATE, "访问地址", apiBaseUrl));
+        content.append(String.format(KiwiConfig.WIKI_API_DOC_INDEX_PAGE_CONTENT_TITLE_TEMPLATE, "协议类型", protocolName));
+        content.append(String.format(KiwiConfig.WIKI_API_DOC_INDEX_PAGE_CONTENT_TITLE_TEMPLATE, "访问方式", apiMethod));
+        content.append(String.format(KiwiConfig.WIKI_API_DOC_INDEX_PAGE_CONTENT_TITLE_TEMPLATE, "Content-type", contentType));
+
+        if (CollectionUtils.isEmpty(apiDetail.getParams())) {
+            return content.toString();
+        }
+
+        BaseInfo firstParam = new BaseInfo();
+        firstParam.setTypeName("参数列表");
+        firstParam.setTypeName4TableTitle("参数列表");
+        if (apiDetail.getParams().size() == 1) {
+            firstParam.setSubTypeInfos(apiDetail.getParams().get(0).getSubTypeInfos());
+        } else {
+            firstParam.setSubTypeInfos(new ArrayList<>(apiDetail.getParams()));
+        }
+
+        content.append(buildKiwiContentForFieldType(firstParam));
+
+        apiDetail.getResult().setTypeName("返回值列表");
+        apiDetail.getResult().setTypeName4TableTitle("返回值列表");
+        content.append(buildKiwiContentForFieldType(apiDetail.getResult()));
+
+        return content.toString();
+    }
+
+    private String buildKiwiContentForFieldType(BaseInfo fieldInfo) {
+
+        StringBuffer content = new StringBuffer();
+
+        Set<String> hadBuildTypes = new HashSet<>();
+        Queue<BaseInfo> listQueue = new ArrayDeque<>();
+        listQueue.add(fieldInfo);
+        while (!listQueue.isEmpty()) {
+
+            BaseInfo nowTypeInfos = listQueue.poll();
+            if (CollectionUtils.isEmpty(nowTypeInfos.getSubTypeInfos())) {
+                continue;
+            }
+
+            StringBuffer rowData = new StringBuffer();
+            for (BaseInfo nowTypeInfo : nowTypeInfos.getSubTypeInfos()) {
+
+                String fieldName = StringUtils.defaultIfEmpty(nowTypeInfo.getName(), "");
+                String fieldType = StringUtils.defaultIfEmpty(nowTypeInfo.getTypeName(), "");
+                String fieldDescription = StringUtils.defaultIfEmpty(nowTypeInfo.getDescription(), "");
+                boolean fieldRequired = nowTypeInfo.isRequired();
+
+                rowData.append(String.format("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
+                        fieldName, StringEscapeUtils.escapeHtml4(fieldType), fieldRequired, fieldDescription));
+
+                if (!hadBuildTypes.contains(nowTypeInfo.getTypeName())) {
+                    listQueue.add(nowTypeInfo);
+                }
+            }
+
+            content.append(String.format(KiwiConfig.WIKI_API_DOC_INDEX_PAGE_CONTENT_TITLE_TEMPLATE,
+                    StringEscapeUtils.escapeHtml4(nowTypeInfos.getTypeName4TableTitle()), ""));
+            content.append("<table><thead><tr><th>属性名称</th><th>属性类型</th><th>是否必填</th><th>属性描述</th></tr></thead>");
+            content.append("<tbody>");
+            content.append(rowData);
+            content.append("</tbody>");
+            content.append("</table>");
+
+            hadBuildTypes.add(nowTypeInfos.getTypeName());
+        }
+
+        return content.toString();
+    }
+
 
 
     /***

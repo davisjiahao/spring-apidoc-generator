@@ -14,7 +14,7 @@ public class KiwiConfig {
 
 
     public static String KIWI_USER_NAME = "daviswujiahao";
-    public static String KIWI_USER_PASSWORD = "TYRoqr*969";
+    public static String KIWI_USER_PASSWORD = "Wu@940511";
 
     public static String KIWI_SPACE_KEY = "~daviswujiahao";
     public static String KIWI_ANCESTOR_ID = "339095512";

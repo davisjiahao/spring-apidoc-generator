@@ -54,6 +54,11 @@ public class ApiDetail {
     private String protocolName;
 
     /**
+     * request content-type
+     */
+    private String contentType;
+
+    /**
      * api 访问url
      */
     private String apiContentUrl;
