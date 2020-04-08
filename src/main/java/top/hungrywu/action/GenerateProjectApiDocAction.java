@@ -5,10 +5,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import top.hungrywu.bean.ApiDoc;
 import top.hungrywu.resolver.ApiResolver;
 import top.hungrywu.service.KiwiService;
+import top.hungrywu.toolwindow.ConsoleLogFactory;
 
 import java.util.Objects;
 
@@ -19,8 +21,8 @@ import java.util.Objects;
  * @date : 2020/2/27 2:18 下午
  *
  **/
+@Slf4j
 public class GenerateProjectApiDocAction extends AnAction {
-
     /**
      * 设置选择项目目录时才会显示生成api文档的选项
      * @param event
@@ -53,15 +55,31 @@ public class GenerateProjectApiDocAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent event) {
-        ApiDoc apiDoc = ApiResolver.buildApiDoc(event.getProject());
-        if (Objects.isNull(apiDoc)) {
-            // todo error log
-        }
-        KiwiService kiwiService = new KiwiService();
-        try {
-            kiwiService.buildApiDocOnWiki(apiDoc);
-        } catch (Exception e) {
-            // todo error log
-        }
+
+        event.getPresentation().setEnabledAndVisible(false);
+        ConsoleLogFactory.showToolWindow();
+        ConsoleLogFactory.clearLog();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ConsoleLogFactory.addInfoLog("test={};;;;;;{}", 1, "222222");
+//                    ApiDoc apiDoc = ApiResolver.buildApiDoc(event.getProject());
+//                    if (Objects.isNull(apiDoc)) {
+//                        // todo error log
+//                    }
+//                    KiwiService kiwiService = new KiwiService();
+//                    try {
+//                        kiwiService.buildApiDocOnWiki(apiDoc);
+//                    } catch (Exception e) {
+//                        // todo error log
+//                    }
+                } finally {
+                    event.getPresentation().setEnabledAndVisible(true);
+                }
+            }
+        }).start();
+
     }
 }
