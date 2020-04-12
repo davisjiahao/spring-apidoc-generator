@@ -25,6 +25,9 @@ import top.hungrywu.bean.kiwi.UpdateKiwiPageRequestData;
 import top.hungrywu.bean.kiwi.WikiPageResponse;
 import top.hungrywu.bean.kiwi.NewWikiPageRequestData;
 import top.hungrywu.config.KiwiConfig;
+import top.hungrywu.exception.BizException;
+import top.hungrywu.exception.BizExceptionEnum;
+import top.hungrywu.toolwindow.ConsoleLogFactory;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -46,56 +49,83 @@ public class KiwiService {
 
     private final int HTTP_SUCCESS_CODE = 200;
 
+    private CloseableHttpClient httpClient;
 
     /**
      * 在kiwi上建立接口文档页面
      * @param apiDoc
      */
     public void buildApiDocOnWiki(@NonNull ApiDoc apiDoc) throws Exception {
-        // 1、首先查找主页面下的所有页面信息
-        WikiPageResponse wikiPageResponse = queryAllPagesUnderOnePage(KiwiConfig.KIWI_ANCESTOR_ID);
-        if (Objects.isNull(wikiPageResponse)) {
-            // todo error: 主页面未配置或者配置出错
+
+        ConsoleLogFactory.addInfoLog("start build api doc on wiki");
+
+        // 0、登录wiki获取http连接
+        ConsoleLogFactory.addInfoLog("user={} start login wiki", KiwiConfig.KIWI_USER_NAME);
+        this.httpClient = loginWiki4httpClient();
+        if (this.httpClient == null) {
+            ConsoleLogFactory.addErrorLog("login wiki failed，please check your network and username or password");
             return;
         }
 
-        // 2、根据查找出的页面标题中是否包含某接口的url判断该接口是需要更新还是新建
-        List<ApiDetail> apiDetails = Objects.isNull(apiDoc.getApiDetails()) ? Collections.EMPTY_LIST : apiDoc.getApiDetails();
-        List<WikiPageResponse> children;
-        if (Objects.isNull(wikiPageResponse.getChildren()) || Objects.isNull(wikiPageResponse.getChildren().getPage()) || Objects.isNull(wikiPageResponse.getChildren().getPage().getResults())) {
-            children = Collections.emptyList();
-        } else {
-            children = wikiPageResponse.getChildren().getPage().getResults();
-        }
-        for (ApiDetail apiDetail : apiDetails) {
-            WikiPageResponse apiPage = null;
-            for (WikiPageResponse child : children) {
-                if (StringUtils.contains(child.getTitle(), StringUtils.join(apiDetail.getBaseUrl(), "|"))) {
-                    apiPage = child;
-                    break;
-                }
+        try {
+            // 1、首先查找主页面下的所有页面信息
+            ConsoleLogFactory.addInfoLog("found all sub pages under page={}", KiwiConfig.KIWI_ANCESTOR_ID);
+            WikiPageResponse wikiPageResponse = queryAllPagesUnderOnePage(KiwiConfig.KIWI_ANCESTOR_ID);
+            if (Objects.isNull(wikiPageResponse)) {
+                ConsoleLogFactory.addErrorLog("page={} can not be found on wiki", KiwiConfig.KIWI_ANCESTOR_ID);
+                return;
             }
-            WikiPageResponse pageResponse;
-            if (Objects.isNull(apiPage)) {
-                // 为该api新建页面
-                pageResponse = buildApi2NewPage(KiwiConfig.KIWI_ANCESTOR_ID, apiDetail);
+
+            // 2、根据查找出的页面标题中是否包含某接口的url判断该接口是需要更新还是新建
+            List<ApiDetail> apiDetails = Objects.isNull(apiDoc.getApiDetails()) ? Collections.EMPTY_LIST : apiDoc.getApiDetails();
+            List<WikiPageResponse> children;
+            if (Objects.isNull(wikiPageResponse.getChildren()) || Objects.isNull(wikiPageResponse.getChildren().getPage()) || Objects.isNull(wikiPageResponse.getChildren().getPage().getResults())) {
+                children = Collections.emptyList();
             } else {
-                // 修改
-                pageResponse = updateApi2ExistedPage(apiDetail, apiPage);
+                children = wikiPageResponse.getChildren().getPage().getResults();
             }
+            for (ApiDetail apiDetail : apiDetails) {
+                WikiPageResponse apiPage = null;
+                for (WikiPageResponse child : children) {
+                    if (StringUtils.contains(child.getTitle(), StringUtils.join(apiDetail.getBaseUrl(), "|"))) {
+                        apiPage = child;
+                        break;
+                    }
+                }
+                WikiPageResponse pageResponse;
+                String apiUrl = StringUtils.join(apiDetail.getBaseUrl(), "|");
+                if (Objects.isNull(apiPage)) {
+                    // 为该api新建页面
+                    ConsoleLogFactory.addInfoLog("start create new doc for api={} on wiki", apiUrl);
+                    pageResponse = buildApi2NewPage(KiwiConfig.KIWI_ANCESTOR_ID, apiDetail);
+                } else {
+                    // 修改
+                    ConsoleLogFactory.addInfoLog("start update doc for api={} on wiki page={}", apiUrl, apiPage.getId());
+                    pageResponse = updateApi2ExistedPage(apiDetail, apiPage);
+                }
+                if (Objects.isNull(pageResponse)) {
+                    ConsoleLogFactory.addErrorLog("failed build doc for api={} on wiki", apiUrl);
+                    continue;
+                }
+
+                ConsoleLogFactory.addInfoLog("finished build doc for api={} on wiki page={}", apiUrl, pageResponse.getId());
+                apiDetail.setApiContentUrl(KiwiConfig.WIKI_VIEW_BASE_URL + pageResponse.getId());
+            }
+
+            // 3、构建api汇总信息页面
+            ConsoleLogFactory.addInfoLog("start update summer doc for all on wiki page={}", KiwiConfig.KIWI_ANCESTOR_ID);
+            WikiPageResponse pageResponse = buildApiSummerPageOnWiki(apiDoc, wikiPageResponse);
             if (Objects.isNull(pageResponse)) {
                 // todo log error
-                continue;
             }
-            apiDetail.setApiContentUrl(KiwiConfig.WIKI_VIEW_BASE_URL + pageResponse.getId());
+
+        } finally {
+            if (this.httpClient != null) {
+                this.httpClient.close();
+            }
         }
 
-        // 3、构建api汇总信息页面
-        WikiPageResponse pageResponse = buildApiSummerPageOnWiki(apiDoc, wikiPageResponse);
-        if (Objects.isNull(pageResponse)) {
-            // todo log error
-        }
-
+        ConsoleLogFactory.addInfoLog("finished build all api doc on wiki");
     }
 
     /***
@@ -171,19 +201,23 @@ public class KiwiService {
 
         httpPost.setHeader("Content-type", "application/x-www-form-urlencoded");
 
-        CloseableHttpResponse response = httpClient.execute(httpPost);
+        CloseableHttpResponse response = null;
         try {
-            String content = new BufferedReader(new InputStreamReader(response.getEntity().getContent()))
-                    .lines().collect(Collectors.joining(System.lineSeparator()));
-            if (response.getStatusLine().getStatusCode() == HTTP_SUCCESS_CODE) {
+            response = httpClient.execute(httpPost);
+            if (response.getStatusLine().getStatusCode() == HTTP_SUCCESS_CODE
+                    && response.getHeaders("X-Seraph-LoginReason").length > 0
+                    && "OK".equalsIgnoreCase(response.getHeaders("X-Seraph-LoginReason")[0].getValue())) {
                 return httpClient;
             } else {
-                // todo error log
+                return null;
             }
+        } catch (Exception e) {
+            return null;
         } finally {
-            response.close();
+            if (Objects.nonNull(response)) {
+                response.close();
+            }
         }
-        return null;
     }
 
     /***
@@ -224,28 +258,21 @@ public class KiwiService {
         httpPut.setHeader("Accept", "application/json");
         httpPut.setHeader("X-Atlassian-Token", "no-check");
 
-        // todo 复用httpClient
-        CloseableHttpClient httpClient = loginWiki4httpClient();
         if (Objects.isNull(httpClient)) {
-            // todo error handler
+            return null;
         }
+
+        CloseableHttpResponse response = httpClient.execute(httpPut);
+        String content = new BufferedReader(new InputStreamReader(response.getEntity().getContent()))
+                .lines().collect(Collectors.joining(System.lineSeparator()));
         try {
-
-            CloseableHttpResponse response = httpClient.execute(httpPut);
-            String content = new BufferedReader(new InputStreamReader(response.getEntity().getContent()))
-                    .lines().collect(Collectors.joining(System.lineSeparator()));
-            try {
-                if (response.getStatusLine().getStatusCode() != HTTP_SUCCESS_CODE) {
-                    // todo error
-                }
-                return JSON.parseObject(content, WikiPageResponse.class);
-            } finally {
-                response.close();
+            if (response.getStatusLine().getStatusCode() != HTTP_SUCCESS_CODE) {
+                return null;
             }
+            return JSON.parseObject(content, WikiPageResponse.class);
         } finally {
-            httpClient.close();
+            response.close();
         }
-
     }
 
     /**
@@ -283,25 +310,20 @@ public class KiwiService {
         httpPost.setHeader("Accept", "application/json");
         httpPost.setHeader("X-Atlassian-Token", "no-check");
 
-        // todo 复用httpClient
-        CloseableHttpClient httpClient = loginWiki4httpClient();
+
         if (Objects.isNull(httpClient)) {
-            // todo error handler
+            return null;
         }
+        CloseableHttpResponse response = httpClient.execute(httpPost);
+        String content = new BufferedReader(new InputStreamReader(response.getEntity().getContent()))
+                .lines().collect(Collectors.joining(System.lineSeparator()));
         try {
-            CloseableHttpResponse response = httpClient.execute(httpPost);
-            String content = new BufferedReader(new InputStreamReader(response.getEntity().getContent()))
-                    .lines().collect(Collectors.joining(System.lineSeparator()));
-            try {
-                if (response.getStatusLine().getStatusCode() != HTTP_SUCCESS_CODE) {
-                    // todo error
-                }
-                return JSON.parseObject(content, WikiPageResponse.class);
-            } finally {
-                response.close();
+            if (response.getStatusLine().getStatusCode() != HTTP_SUCCESS_CODE) {
+                return null;
             }
+            return JSON.parseObject(content, WikiPageResponse.class);
         } finally {
-            httpClient.close();
+            response.close();
         }
     }
 
@@ -471,28 +493,22 @@ public class KiwiService {
         WikiPageResponse wikiPageResponse;
 
         // todo 复用httpClient
-        CloseableHttpClient httpClient = loginWiki4httpClient();
         if (Objects.isNull(httpClient)) {
             // todo error handler
         }
 
+        CloseableHttpResponse response = httpClient.execute(httpGet);
+        String content = new BufferedReader(new InputStreamReader(response.getEntity().getContent()))
+                .lines().collect(Collectors.joining(System.lineSeparator()));
+
+        wikiPageResponse = JSON.parseObject(content, WikiPageResponse.class);
+
         try {
-            CloseableHttpResponse response = httpClient.execute(httpGet);
-            String content = new BufferedReader(new InputStreamReader(response.getEntity().getContent()))
-                    .lines().collect(Collectors.joining(System.lineSeparator()));
-
-            wikiPageResponse = JSON.parseObject(content, WikiPageResponse.class);
-
-            try {
-                if (response.getStatusLine().getStatusCode() != HTTP_SUCCESS_CODE) {
-                    // todo error
-                }
-            } finally {
-                response.close();
+            if (response.getStatusLine().getStatusCode() != HTTP_SUCCESS_CODE) {
+                // todo error
             }
-
         } finally {
-            httpClient.close();
+            response.close();
         }
 
         return wikiPageResponse;

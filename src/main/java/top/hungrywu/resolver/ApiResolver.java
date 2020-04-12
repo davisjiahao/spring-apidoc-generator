@@ -42,8 +42,6 @@ public class ApiResolver {
 
         apiDoc.setApiDetails(apiDetails);
 
-        log.info(apiDetails);
-
         PsiTypeResolverHelper.clearResolvedInfoCache();
 
         return apiDoc;

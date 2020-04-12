@@ -8,9 +8,14 @@ import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
+import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.Content;
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.helpers.MessageFormatter;
+
+import java.util.Date;
+import java.util.Objects;
 
 /**
  * @author daviswujiahao
@@ -21,25 +26,44 @@ public class ConsoleLogFactory implements ToolWindowFactory {
     private static ConsoleView consoleView;
     private static ToolWindow toolWindow;
 
-    @Override
-    public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        ConsoleLogFactory.toolWindow = toolWindow;
-        consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
-        Content content = toolWindow.getContentManager().getFactory().createContent(consoleView.getComponent(), "", false);
-        toolWindow.getContentManager().addContent(content);
+    private static final String LOG_TIME_FORMATTER = "yyyy-MM-dd mm:ss.SSS";
+
+    private static void initToolWindowAndConsoleView(@NotNull Project project) {
+        if (Objects.isNull(ConsoleLogFactory.toolWindow)) {
+            ConsoleLogFactory.toolWindow = ToolWindowManager.getInstance(project).getToolWindow("apiDoc");
+        }
+        if (Objects.isNull(ConsoleLogFactory.consoleView)) {
+            ConsoleLogFactory.consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
+            Content content =  ConsoleLogFactory.toolWindow.getContentManager().getFactory().createContent(ConsoleLogFactory.consoleView.getComponent(), "", false);
+            ConsoleLogFactory.toolWindow.getContentManager().addContent(content);
+        }
     }
 
-    public static void showToolWindow() {
-        toolWindow.activate(null);
-        toolWindow.show(null);
+    public static boolean logConsoleIsReady() {
+        return Objects.nonNull(consoleView);
+    }
+
+    @Override
+    public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+        initToolWindowAndConsoleView(project);
+    }
+
+    public static void showToolWindow(@NotNull Project project) {
+        initToolWindowAndConsoleView(project);
+        ConsoleLogFactory.toolWindow.activate(null);
+        ConsoleLogFactory.toolWindow.show(null);
     }
 
     public static void addInfoLog(String formatter, Object... argc) {
-        consoleView.print(MessageFormatter.arrayFormat(formatter, argc).getMessage(), ConsoleViewContentType.NORMAL_OUTPUT);
+        consoleView.print(DateFormatUtils.format(new Date(), LOG_TIME_FORMATTER)
+                        + ":INFO:" + MessageFormatter.arrayFormat(formatter, argc).getMessage() + "\n",
+                ConsoleViewContentType.NORMAL_OUTPUT);
     }
 
     public static void addErrorLog(String formatter, Object... argc) {
-        consoleView.print(MessageFormatter.arrayFormat(formatter, argc).getMessage(), ConsoleViewContentType.NORMAL_OUTPUT);
+        consoleView.print(DateFormatUtils.format(new Date(), LOG_TIME_FORMATTER)
+                + ":ERROR:" + MessageFormatter.arrayFormat(formatter, argc).getMessage() + "\n",
+                ConsoleViewContentType.NORMAL_OUTPUT);
     }
 
     public static void clearLog() {

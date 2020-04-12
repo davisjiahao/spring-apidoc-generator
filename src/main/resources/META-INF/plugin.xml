@@ -24,7 +24,7 @@
         <action id="top.hungrywu.action.GenerateProjectApiDocAction"
                 class="top.hungrywu.action.GenerateProjectApiDocAction"
                 text="generateProjectApiDoc" description="生成整个项目的apidoc">
-            <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
     </actions>
 </idea-plugin>

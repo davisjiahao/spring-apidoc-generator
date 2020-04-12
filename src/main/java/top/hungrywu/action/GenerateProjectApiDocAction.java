@@ -3,11 +3,15 @@ package top.hungrywu.action;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.wm.ToolWindowManager;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import top.hungrywu.bean.ApiDoc;
+import top.hungrywu.exception.BizException;
+import top.hungrywu.exception.BizExceptionEnum;
 import top.hungrywu.resolver.ApiResolver;
 import top.hungrywu.service.KiwiService;
 import top.hungrywu.toolwindow.ConsoleLogFactory;
@@ -57,29 +61,33 @@ public class GenerateProjectApiDocAction extends AnAction {
     public void actionPerformed(AnActionEvent event) {
 
         event.getPresentation().setEnabledAndVisible(false);
-        ConsoleLogFactory.showToolWindow();
+        ConsoleLogFactory.showToolWindow(event.getProject());
         ConsoleLogFactory.clearLog();
 
-        new Thread(new Runnable() {
+        ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
             @Override
             public void run() {
-                try {
-                    ConsoleLogFactory.addInfoLog("test={};;;;;;{}", 1, "222222");
-//                    ApiDoc apiDoc = ApiResolver.buildApiDoc(event.getProject());
-//                    if (Objects.isNull(apiDoc)) {
-//                        // todo error log
-//                    }
-//                    KiwiService kiwiService = new KiwiService();
-//                    try {
-//                        kiwiService.buildApiDocOnWiki(apiDoc);
-//                    } catch (Exception e) {
-//                        // todo error log
-//                    }
-                } finally {
-                    event.getPresentation().setEnabledAndVisible(true);
-                }
+                ApplicationManager.getApplication().runReadAction(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            ApiDoc apiDoc = ApiResolver.buildApiDoc(event.getProject());
+                            if (Objects.isNull(apiDoc)) {
+                                throw new BizException(BizExceptionEnum.UNKNOWN_EXCEPTION);
+                            }
+                            KiwiService kiwiService = new KiwiService();
+                            kiwiService.buildApiDocOnWiki(apiDoc);
+                        } catch (BizException bizException) {
+                            bizException.printStackTrace();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        } finally {
+                            event.getPresentation().setEnabledAndVisible(true);
+                        }
+                    }
+                });
             }
-        }).start();
+        });
 
     }
 }
