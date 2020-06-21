@@ -36,10 +36,10 @@ public class PsiMethodResolverHelper {
         for (PsiParameter psiParameter : parameters) {
 
             ParamDetail paramDetail;
-            boolean wrapped = RequestConfig.defaultWrapped;
+            boolean wrapped = RequestConfig.DEFAULT_WRAPPED;
 
             ParamInfo paramInfo = paramJavaDocInfos.get(psiParameter.getName());
-            if (Objects.equals(psiParameter.getType().getCanonicalText(), RequestConfig.wrappedRequestClassName)
+            if (Objects.equals(psiParameter.getType().getCanonicalText(), RequestConfig.WRAPPED_REQUEST_CLASS_NAME)
                     && Objects.isNull(paramInfo.getParaType())) {
                 paramDetail = new ParamDetail();
                 paramDetail.setTypeName("{}");
@@ -71,7 +71,7 @@ public class PsiMethodResolverHelper {
 
             // todo 获取wrappedRequestClass 不需要每次解析一个param就进行一次
             PsiClass wrappedRequestClass = JavaPsiFacade.getInstance(psiMethod.getProject())
-                    .findClass(RequestConfig.wrappedRequestClassName,
+                    .findClass(RequestConfig.WRAPPED_REQUEST_CLASS_NAME,
                             GlobalSearchScope.projectScope(psiMethod.getProject()));
             if(Objects.isNull(wrappedRequestClass)) {
                 // todo error log: RequestConfig.wrappedRequestClassName 配置错误
@@ -87,7 +87,7 @@ public class PsiMethodResolverHelper {
                 String typeName = field.getType().getPresentableText();
                 requestParam.setTypeName(typeName);
                 requestParam.setTypeName4TableTitle(typeName);
-                if (Objects.equals(fieldName, RequestConfig.wrappedRequestContentFileName)) {
+                if (Objects.equals(fieldName, RequestConfig.WRAPPED_REQUEST_CONTENT_FILE_NAME)) {
                     requestParam.setSubTypeInfos(new ArrayList<>());
                     if (wrappedParamDetails.size() == 1) {
                         requestParam.setTypeName(wrappedParamDetails.get(0).getTypeName());

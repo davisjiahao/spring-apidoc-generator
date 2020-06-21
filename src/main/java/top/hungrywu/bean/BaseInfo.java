@@ -30,7 +30,7 @@ public class BaseInfo {
     /**
      * 该参数是否可选
      */
-    private boolean required;
+    private boolean required = true;
 
     /**
      * 子类型描述信息

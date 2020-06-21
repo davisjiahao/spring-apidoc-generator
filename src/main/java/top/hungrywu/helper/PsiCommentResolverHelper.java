@@ -160,7 +160,7 @@ public class PsiCommentResolverHelper {
 
                         PsiDocTag requestWrappedTag = parseWrappedTagBehindOfParaTag(tag);
                         if (Objects.isNull(requestWrappedTag)) {
-                            paramInfo.setRequestWrapped(RequestConfig.defaultWrapped);
+                            paramInfo.setRequestWrapped(RequestConfig.DEFAULT_WRAPPED);
                         } else {
                             String requestWrappedStr = requestWrappedTag.getValueElement().getText().trim();
                             if (StringUtils.containsIgnoreCase(requestWrappedStr, "true")) {
@@ -168,7 +168,7 @@ public class PsiCommentResolverHelper {
                             } else if (StringUtils.containsIgnoreCase(requestWrappedStr, "false")) {
                                 paramInfo.setRequestWrapped(false);
                             } else {
-                                paramInfo.setRequestWrapped(RequestConfig.defaultWrapped);
+                                paramInfo.setRequestWrapped(RequestConfig.DEFAULT_WRAPPED);
                             }
                         }
 

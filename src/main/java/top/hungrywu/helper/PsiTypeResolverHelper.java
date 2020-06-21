@@ -1,5 +1,6 @@
 package top.hungrywu.helper;
 
+import com.intellij.lang.jvm.JvmModifier;
 import com.intellij.psi.*;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.util.text.DateFormatUtil;
@@ -83,6 +84,11 @@ public class PsiTypeResolverHelper {
             PsiField[] allFields = psiClass.getFields();
             for (PsiField subPsiField : allFields) {
 
+                // 如果是静态类型，则不解析
+                if (subPsiField.hasModifier(JvmModifier.STATIC)) {
+                    continue;
+                }
+
                 BaseInfo subBaseInfo = new BaseInfo();
 
                 PsiType subTruePsiType = subPsiField.getType();
@@ -96,6 +102,11 @@ public class PsiTypeResolverHelper {
                 // 1、解析psiField 的javaDoc注释
                 PsiDocComment psiDocCommentOnField = subPsiField.getDocComment();
                 subBaseInfo.setDescription(PsiCommentResolverHelper.getDescriptionInJavaDoc(psiDocCommentOnField));
+                subBaseInfo.setRequired(true);
+                // 如果包含apiIgnore注解，则是非必填项
+                if (PsiCommentResolverHelper.existedTag(subPsiField.getDocComment(), PsiCommentResolverHelper.API_PARSER_IGNORE)) {
+                    subBaseInfo.setRequired(false);
+                }
 
                 // 2、解析psiField 的注解信息 todo
 

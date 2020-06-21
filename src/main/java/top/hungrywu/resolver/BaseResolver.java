@@ -11,6 +11,7 @@ import top.hungrywu.bean.DescriptionDetail;
 import top.hungrywu.bean.ParamDetail;
 import top.hungrywu.bean.ReturnDetail;
 import top.hungrywu.enums.annotations.BaseMappingAnnotation;
+import top.hungrywu.helper.PsiCommentResolverHelper;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -101,6 +102,9 @@ public abstract class BaseResolver {
 
                 // 2、再在找到的class文件中寻找api描述信息
                 PsiClass psiClass = (PsiClass) psiElement;
+                if (PsiCommentResolverHelper.existedTag(psiClass.getDocComment(), PsiCommentResolverHelper.API_PARSER_IGNORE)) {
+                    continue;
+                }
                 List<ApiDetail> apiDetailsInClass = this.getAllApiInClass(psiClass);
                 if (CollectionUtils.isEmpty(apiDetailsInClass)) {
                     continue;

@@ -13,11 +13,11 @@ public class KiwiConfig {
     public static String WIKI_VIEW_BASE_URL = "/pages/viewpage.action?pageId=";
 
 
-    public static String KIWI_USER_NAME = "daviswujiahao";
-    public static String KIWI_USER_PASSWORD = "Wu@940511";
+    public static String KIWI_USER_NAME = "";
+    public static String KIWI_USER_PASSWORD = "";
 
-    public static String KIWI_SPACE_KEY = "~daviswujiahao";
-    public static String KIWI_ANCESTOR_ID = "344973570";
+    public static String KIWI_SPACE_KEY = "";
+    public static String KIWI_ANCESTOR_ID = "";
 
     public static String WIKI_API_DOC_INDEX_PAGE_CONTENT_TITLE_TEMPLATE = "<p><strong>%s</strong>:%s</p>";
 }
