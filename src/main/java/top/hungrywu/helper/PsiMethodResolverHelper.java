@@ -40,7 +40,7 @@ public class PsiMethodResolverHelper {
 
             ParamInfo paramInfo = paramJavaDocInfos.get(psiParameter.getName());
             if (Objects.equals(psiParameter.getType().getCanonicalText(), RequestConfig.WRAPPED_REQUEST_CLASS_NAME)
-                    && Objects.isNull(paramInfo.getParaType())) {
+                    && Objects.nonNull(paramInfo) && Objects.isNull(paramInfo.getParaType())) {
                 paramDetail = new ParamDetail();
                 paramDetail.setTypeName("{}");
                 wrapped = true;

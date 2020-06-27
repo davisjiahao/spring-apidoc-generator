@@ -1,5 +1,8 @@
 package top.hungrywu.config;
 
+import org.apache.commons.lang.StringUtils;
+import top.hungrywu.toolwindow.ConsoleLogFactory;
+
 /**
  * @Description TODO
  * @Author daviswujiahao
@@ -8,4 +11,11 @@ package top.hungrywu.config;
  **/
 public class ResponseConfig {
     public static String DEFAULT_RESPONSE_CONTENT_TYPE = "application/json";
+    public static boolean validConfig() {
+        if (StringUtils.isEmpty(DEFAULT_RESPONSE_CONTENT_TYPE)) {
+            ConsoleLogFactory.addErrorLog("config error: default response content type can not be empty");
+            return false;
+        }
+        return true;
+    }
 }

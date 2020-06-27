@@ -6,8 +6,11 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElement;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import top.hungrywu.bean.ApiDetail;
 import top.hungrywu.bean.ApiDoc;
 import top.hungrywu.exception.BizException;
 import top.hungrywu.exception.BizExceptionEnum;
@@ -15,6 +18,7 @@ import top.hungrywu.resolver.ApiResolver;
 import top.hungrywu.service.KiwiService;
 import top.hungrywu.toolwindow.ConsoleLogFactory;
 
+import java.util.List;
 import java.util.Objects;
 
 /***
@@ -25,9 +29,9 @@ import java.util.Objects;
  *
  **/
 @Slf4j
-public class GenerateProjectApiDocAction extends AnAction {
+public class GenerateClassApiDescsAction extends AnAction {
     /**
-     * 设置选择项目目录时才会显示生成api文档的选项
+     * 设置选择class文件时才会显示生成api文档的选项
      * @param event
      */
     @Override
@@ -40,19 +44,17 @@ public class GenerateProjectApiDocAction extends AnAction {
         }
 
         // 获得点击时被选择的文件
-        VirtualFile file = event.getData(CommonDataKeys.VIRTUAL_FILE);
-        if (file == null) {
+        PsiElement psiElement = event.getData(CommonDataKeys.PSI_ELEMENT);
+        if (psiElement == null || !(psiElement instanceof PsiClass)) {
             event.getPresentation().setEnabledAndVisible(false);
             return;
         }
 
-        // 设置只有在本工程的主项目目录上才显示生成api文档的选项
-        String currentFilePath = file.getPath();
-        if (Objects.equals(currentProject.getBasePath(), currentFilePath)) {
-            event.getPresentation().setEnabledAndVisible(true);
-        } else {
+        if (!ApiResolver.isClassContainApi((PsiClass) psiElement)) {
             event.getPresentation().setEnabledAndVisible(false);
+            return;
         }
+
 
     }
 
@@ -63,28 +65,30 @@ public class GenerateProjectApiDocAction extends AnAction {
         ConsoleLogFactory.showToolWindow(event.getProject());
         ConsoleLogFactory.clearLog();
 
-        ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
-            @Override
-            public void run() {
-                ApplicationManager.getApplication().runReadAction(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            ApiDoc apiDoc = ApiResolver.buildProjectApiDoc(event.getProject());
-                            if (Objects.isNull(apiDoc)) {
-                                throw new BizException(BizExceptionEnum.UNKNOWN_EXCEPTION);
-                            }
-                            KiwiService kiwiService = new KiwiService();
-                            kiwiService.buildApiDocOnWiki(apiDoc);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        } finally {
-                            event.getPresentation().setEnabledAndVisible(true);
-                        }
-                    }
-                });
+        // 获得点击时被选择的文件
+        PsiElement psiElement = event.getData(CommonDataKeys.PSI_ELEMENT);
+        if (psiElement == null || !(psiElement instanceof PsiClass)) {
+            return;
+        }
+
+        if (!ApiResolver.isClassContainApi((PsiClass) psiElement)) {
+            return;
+        }
+
+        ApplicationManager.getApplication().executeOnPooledThread(() -> ApplicationManager.getApplication().runReadAction(() -> {
+            try {
+                List<ApiDetail> apiDetails = ApiResolver.buildApiInClass((PsiClass) psiElement);
+                if (Objects.isNull(apiDetails)) {
+                    return;
+                }
+                KiwiService kiwiService = new KiwiService();
+                kiwiService.buildApiDescsOnWiki(apiDetails);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                event.getPresentation().setEnabledAndVisible(true);
             }
-        });
+        }));
 
     }
 }

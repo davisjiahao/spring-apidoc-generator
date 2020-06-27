@@ -1,6 +1,7 @@
 package top.hungrywu.service;
 
 import com.alibaba.fastjson.JSON;
+import com.sun.istack.NotNull;
 import com.sun.istack.Nullable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -51,13 +52,145 @@ public class KiwiService {
 
     private CloseableHttpClient httpClient;
 
+    public void buildOneApiDescOnWiki(@NotNull ApiDetail apiDetail) throws Exception {
+
+        ConsoleLogFactory.addInfoLog("start build api={} on wiki", apiDetail);
+        // 0、登录wiki获取http连接
+        ConsoleLogFactory.addInfoLog("user={} start login wiki", KiwiConfig.KIWI_USER_NAME);
+        this.httpClient = loginWiki4httpClient();
+        if (this.httpClient == null) {
+            ConsoleLogFactory.addErrorLog("login wiki failed，please check your network and username or password");
+            return;
+        }
+
+        try {
+            // 1、首先查找主页面下的所有页面信息
+            ConsoleLogFactory.addInfoLog("found all sub pages under page={}", KiwiConfig.KIWI_ANCESTOR_ID);
+            WikiPageResponse wikiPageResponse = queryAllPagesUnderOnePage(KiwiConfig.KIWI_ANCESTOR_ID);
+            if (Objects.isNull(wikiPageResponse)) {
+                ConsoleLogFactory.addErrorLog("page={} can not be found on wiki", KiwiConfig.KIWI_ANCESTOR_ID);
+                return;
+            }
+
+            // 2、根据查找出的页面标题中是否包含某接口的url判断该接口是需要更新还是新建
+            List<WikiPageResponse> children;
+            if (Objects.isNull(wikiPageResponse.getChildren()) || Objects.isNull(wikiPageResponse.getChildren().getPage()) || Objects.isNull(wikiPageResponse.getChildren().getPage().getResults())) {
+                children = Collections.emptyList();
+            } else {
+                children = wikiPageResponse.getChildren().getPage().getResults();
+            }
+            WikiPageResponse apiPage = null;
+            for (WikiPageResponse child : children) {
+                if (StringUtils.contains(child.getTitle(), StringUtils.join(apiDetail.getBaseUrl(), "|"))) {
+                    apiPage = child;
+                    break;
+                }
+            }
+            WikiPageResponse pageResponse;
+            String apiUrl = StringUtils.join(apiDetail.getBaseUrl(), "|");
+            if (Objects.isNull(apiPage)) {
+                // 为该api新建页面
+                ConsoleLogFactory.addInfoLog("start create new doc for api={} on wiki", apiUrl);
+                pageResponse = buildApi2NewPage(KiwiConfig.KIWI_ANCESTOR_ID, apiDetail);
+            } else {
+                // 修改
+                ConsoleLogFactory.addInfoLog("start update doc for api={} on wiki page={}", apiUrl, apiPage.getId());
+                pageResponse = updateApi2ExistedPage(apiDetail, apiPage);
+            }
+            if (Objects.isNull(pageResponse)) {
+                ConsoleLogFactory.addErrorLog("failed build doc for api={} on wiki", apiUrl);
+                return;
+            }
+
+            ConsoleLogFactory.addInfoLog("finished build doc for api={} on wiki page={}", apiUrl, pageResponse.getId());
+            apiDetail.setApiContentUrl(KiwiConfig.WIKI_VIEW_BASE_URL + pageResponse.getId());
+
+        } finally {
+            if (this.httpClient != null) {
+                this.httpClient.close();
+            }
+        }
+
+    }
+
+    /***
+     *
+     * @author : daviswujiahao 
+     * @date : 2020/6/27 12:24 下午
+     * @param apiDetails :
+     * @return : void
+     **/
+    public void buildApiDescsOnWiki(@NotNull List<ApiDetail> apiDetails) throws Exception {
+
+        ConsoleLogFactory.addInfoLog("start build apis={} on wiki", apiDetails);
+        // 0、登录wiki获取http连接
+        ConsoleLogFactory.addInfoLog("user={} start login wiki", KiwiConfig.KIWI_USER_NAME);
+        this.httpClient = loginWiki4httpClient();
+        if (this.httpClient == null) {
+            ConsoleLogFactory.addErrorLog("login wiki failed，please check your network and username or password");
+            return;
+        }
+
+        try {
+            // 1、首先查找主页面下的所有页面信息
+            ConsoleLogFactory.addInfoLog("found all sub pages under page={}", KiwiConfig.KIWI_ANCESTOR_ID);
+            WikiPageResponse wikiPageResponse = queryAllPagesUnderOnePage(KiwiConfig.KIWI_ANCESTOR_ID);
+            if (Objects.isNull(wikiPageResponse)) {
+                ConsoleLogFactory.addErrorLog("page={} can not be found on wiki", KiwiConfig.KIWI_ANCESTOR_ID);
+                return;
+            }
+
+            // 2、根据查找出的页面标题中是否包含某接口的url判断该接口是需要更新还是新建
+            List<WikiPageResponse> children;
+            if (Objects.isNull(wikiPageResponse.getChildren()) || Objects.isNull(wikiPageResponse.getChildren().getPage()) || Objects.isNull(wikiPageResponse.getChildren().getPage().getResults())) {
+                children = Collections.emptyList();
+            } else {
+                children = wikiPageResponse.getChildren().getPage().getResults();
+            }
+            for (ApiDetail apiDetail : apiDetails) {
+                WikiPageResponse apiPage = null;
+                for (WikiPageResponse child : children) {
+                    if (StringUtils.contains(child.getTitle(), StringUtils.join(apiDetail.getBaseUrl(), "|"))) {
+                        apiPage = child;
+                        break;
+                    }
+                }
+                WikiPageResponse pageResponse;
+                String apiUrl = StringUtils.join(apiDetail.getBaseUrl(), "|");
+                if (Objects.isNull(apiPage)) {
+                    // 为该api新建页面
+                    ConsoleLogFactory.addInfoLog("start create new doc for api={} on wiki", apiUrl);
+                    pageResponse = buildApi2NewPage(KiwiConfig.KIWI_ANCESTOR_ID, apiDetail);
+                } else {
+                    // 修改
+                    ConsoleLogFactory.addInfoLog("start update doc for api={} on wiki page={}", apiUrl, apiPage.getId());
+                    pageResponse = updateApi2ExistedPage(apiDetail, apiPage);
+                }
+                if (Objects.isNull(pageResponse)) {
+                    ConsoleLogFactory.addErrorLog("failed build doc for api={} on wiki", apiUrl);
+                    continue;
+                }
+
+                ConsoleLogFactory.addInfoLog("finished build doc for api={} on wiki page={}", apiUrl, pageResponse.getId());
+                apiDetail.setApiContentUrl(KiwiConfig.WIKI_VIEW_BASE_URL + pageResponse.getId());
+            }
+
+        } finally {
+            if (this.httpClient != null) {
+                this.httpClient.close();
+            }
+        }
+
+    }
+
     /**
      * 在kiwi上建立接口文档页面
+     *
      * @param apiDoc
      */
     public void buildApiDocOnWiki(@NonNull ApiDoc apiDoc) throws Exception {
 
-        ConsoleLogFactory.addInfoLog("start build api doc on wiki");
+        ConsoleLogFactory.addInfoLog("start build api doc={} on wiki", apiDoc);
 
         // 0、登录wiki获取http连接
         ConsoleLogFactory.addInfoLog("user={} start login wiki", KiwiConfig.KIWI_USER_NAME);
@@ -113,11 +246,11 @@ public class KiwiService {
             }
 
             // 3、构建api汇总信息页面
-            ConsoleLogFactory.addInfoLog("start update summer doc for all on wiki page={}", KiwiConfig.KIWI_ANCESTOR_ID);
+           /* ConsoleLogFactory.addInfoLog("start update summer doc for all on wiki page={}", KiwiConfig.KIWI_ANCESTOR_ID);
             WikiPageResponse pageResponse = buildApiSummerPageOnWiki(apiDoc, wikiPageResponse);
             if (Objects.isNull(pageResponse)) {
                 // todo log error
-            }
+            }*/
 
         } finally {
             if (this.httpClient != null) {
@@ -146,12 +279,11 @@ public class KiwiService {
     }
 
     /**
-     *
-     * @author : daviswujiahao 
-     * @date : 2020/3/27 2:05 下午
      * @param wikiPageResponse :
-     * @param apiDetail :  
+     * @param apiDetail        :
      * @return : top.hungrywu.bean.kiwi.WikiPageResponse
+     * @author : daviswujiahao
+     * @date : 2020/3/27 2:05 下午
      **/
     private WikiPageResponse updateApi2ExistedPage(ApiDetail apiDetail, WikiPageResponse wikiPageResponse) throws Exception {
         String content = buildApiDetailKiwiPageContent(apiDetail);
@@ -165,12 +297,11 @@ public class KiwiService {
 
 
     /**
-     *
-     * @author : daviswujiahao 
-     * @date : 2020/3/27 2:05 下午
-     * @param kiwiAncestorsId : 
-     * @param apiDetail :  
+     * @param kiwiAncestorsId :
+     * @param apiDetail       :
      * @return : top.hungrywu.bean.kiwi.WikiPageResponse
+     * @author : daviswujiahao
+     * @date : 2020/3/27 2:05 下午
      **/
     private WikiPageResponse buildApi2NewPage(String kiwiAncestorsId, ApiDetail apiDetail) throws Exception {
         String content = buildApiDetailKiwiPageContent(apiDetail);
@@ -180,6 +311,7 @@ public class KiwiService {
 
     /**
      * 登录kiwi后获取httpclient，用于后续操作
+     *
      * @return null：登录失败返回null
      * @throws Exception
      */
@@ -232,7 +364,7 @@ public class KiwiService {
      **/
     public WikiPageResponse updateKiwiPage(String pageId, String pageTitle, String pageContent, int oldVersionNum) throws Exception {
 
-        HttpPut httpPut = new HttpPut(KiwiConfig.WIKI_HOST + KiwiConfig.WIKI_CONTENT_API_BASE_URL + "/" +pageId);
+        HttpPut httpPut = new HttpPut(KiwiConfig.WIKI_HOST + KiwiConfig.WIKI_CONTENT_API_BASE_URL + "/" + pageId);
 
         UpdateKiwiPageRequestData requestData = UpdateKiwiPageRequestData.builder()
                 .title(pageTitle)
@@ -277,6 +409,7 @@ public class KiwiService {
 
     /**
      * 在kiwi上新建page
+     *
      * @param pageContent
      * @param pageTitle
      * @throws Exception
@@ -418,7 +551,6 @@ public class KiwiService {
     }
 
 
-
     /***
      * 构建接口汇总信息页面的内容
      * @author : daviswujiahao
@@ -514,7 +646,6 @@ public class KiwiService {
         return wikiPageResponse;
 
     }
-
 
 
 }

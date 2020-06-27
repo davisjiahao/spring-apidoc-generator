@@ -4,14 +4,18 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.java.stubs.index.JavaAnnotationIndex;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.sun.istack.NotNull;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.annotations.NonNull;
 import top.hungrywu.bean.ApiDetail;
 import top.hungrywu.bean.DescriptionDetail;
 import top.hungrywu.bean.ParamDetail;
 import top.hungrywu.bean.ReturnDetail;
+import top.hungrywu.config.KiwiConfig;
 import top.hungrywu.enums.annotations.BaseMappingAnnotation;
 import top.hungrywu.helper.PsiCommentResolverHelper;
+import top.hungrywu.toolwindow.ConsoleLogFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -117,9 +121,41 @@ public abstract class BaseResolver {
     }
 
     /**
-     * 解析class文件中的
+     * 获取单个方法的接口描述信息
+     * @param psiMethod
+     * @return
+     */
+    public abstract ApiDetail getApiOfMethod(@NonNull PsiMethod psiMethod);
+
+
+    /**
+     * 解析class文件中的接口描述信息
      * @param myClass
      * @return
      */
-    protected abstract List<ApiDetail> getAllApiInClass(@NonNull PsiClass myClass);
+    public abstract List<ApiDetail> getAllApiInClass(@NonNull PsiClass myClass);
+
+    /**
+     * 某个class是否包含api
+     * @param psiClass
+     * @return
+     */
+    public boolean isClassContainApi(PsiClass psiClass) {
+        PsiAnnotation[] annotations = psiClass.getAnnotations();
+        for (BaseMappingAnnotation mappingAnnotation : supportedAnnotations) {
+            for (PsiAnnotation psiAnnotation : annotations) {
+                if (StringUtils.equals(psiAnnotation.getQualifiedName(), mappingAnnotation.getQualifiedName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 判断某个方法是否是api方法
+     * @param psiMethod
+     * @return
+     */
+    public abstract boolean isMethodApi(PsiMethod psiMethod);
 }

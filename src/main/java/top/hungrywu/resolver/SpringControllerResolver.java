@@ -34,9 +34,79 @@ public class SpringControllerResolver extends BaseResolver {
         super(SpringControllerAnnotation.values());
     }
 
+    /**
+     * 获取单个方法的接口描述信息
+     *
+     * @param psiMethod
+     * @return
+     */
+    @Override
+    public ApiDetail getApiOfMethod(@NonNull PsiMethod psiMethod) {
+        PsiClass containingClass = psiMethod.getContainingClass();
+        if (Objects.isNull(containingClass)) {
+            return null;
+        }
+        // 1、解析myClass上的RequestPath注解，获取class 级别的urlBasePath 和 requestMethodType
+        PsiAnnotation[] classAnnotations = containingClass.getAnnotations();
+        if (classAnnotations == null || classAnnotations.length == 0) {
+            return null;
+        }
+        // 获取class级别的RequestPath注解上的method属性的值
+        List<String> methodTypeListOnClass = new ArrayList<>();
+        // 获取class级别的RequestPath注解上的value属性的值
+        List<String> pathListOnClass = new ArrayList<>();
+        resolveRequestPathOnClass(classAnnotations, methodTypeListOnClass, pathListOnClass);
+
+        // 2、解析myClass上的javaDoc注释，获取默认的author信息
+        PsiDocComment comment = containingClass.getDocComment();
+        DescriptionDetail classDescriptionDetail = PsiCommentResolverHelper.parseJavaDoc(comment);
+        if (Objects.isNull(classDescriptionDetail)) {
+            classDescriptionDetail = new DescriptionDetail();
+        }
+
+        ApiDetail apiDetail = resolveMethod2Api(psiMethod);
+        if (Objects.isNull(apiDetail)) {
+            return null;
+        }
+
+        if (StringUtils.isEmpty(apiDetail.getAuthor()) && !StringUtils.isEmpty(classDescriptionDetail.getAuthorName())) {
+            apiDetail.setAuthor(classDescriptionDetail.getAuthorName());
+        }
+
+        if (CollectionUtils.isEmpty(apiDetail.getBaseUrl())) {
+            // todo error
+            return null;
+        }
+        if (CollectionUtils.isNotEmpty(pathListOnClass)) {
+            List<String> fullBaseUrls = new ArrayList<>();
+            // 拼接url
+            for (String pathOnClass : pathListOnClass) {
+                for (String pathOnMethod : apiDetail.getBaseUrl()) {
+                    fullBaseUrls.add(pathOnClass + pathOnMethod);
+                }
+            }
+            apiDetail.setBaseUrl(fullBaseUrls);
+        }
+
+        if (CollectionUtils.isEmpty(apiDetail.getMethodType()) && !CollectionUtils.isEmpty(methodTypeListOnClass)) {
+            apiDetail.setMethodType(methodTypeListOnClass);
+        }
+        if (CollectionUtils.isEmpty(apiDetail.getMethodType())) {
+            // todo 如果进行到这里 methodType还是为空，需要指定默认的methodType
+        }
+        for (int i = 0; i < apiDetail.getMethodType().size(); i++) {
+            // 去掉methodTypeqian前缀
+            if (apiDetail.getMethodType().get(i).contains(".")) {
+                apiDetail.getMethodType().set(i, apiDetail.getMethodType().get(i).substring(apiDetail.getMethodType().get(i).lastIndexOf('.') + 1));
+            }
+        }
+
+        return apiDetail;
+    }
+
     @NonNull
     @Override
-    protected List<ApiDetail> getAllApiInClass(@NonNull PsiClass psiClass) {
+    public List<ApiDetail> getAllApiInClass(@NonNull PsiClass psiClass) {
 
         // 1、解析myClass上的RequestPath注解，获取class 级别的urlBasePath 和 requestMethodType
         PsiAnnotation[] classAnnotations = psiClass.getAnnotations();
@@ -214,4 +284,14 @@ public class SpringControllerResolver extends BaseResolver {
         return null;
     }
 
+    @Override
+    public boolean isMethodApi(PsiMethod psiMethod) {
+        if (Objects.isNull(psiMethod)) {
+            return false;
+        }
+        if (Objects.isNull(getSpringAnnotationOnMethod(psiMethod))) {
+            return false;
+        }
+        return true;
+    }
 }

@@ -4,7 +4,6 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
-import org.apache.commons.lang.StringUtils;
 import org.jdom.Element;
 import org.jetbrains.annotations.Nullable;
 import top.hungrywu.config.KiwiConfig;
@@ -17,10 +16,12 @@ import top.hungrywu.config.ResponseConfig;
  */
 @State(
     name = "ApiDocSettings",
-    storages = @Storage("apiDoc.xml"))
+    storages = @Storage("apiDoc.xml")
+)
 public class ApiDocSetting implements PersistentStateComponent<Element> {
 
   public static ApiDocSetting getInstance() {
+
     return ServiceManager.getService(ApiDocSetting.class);
   }
 
@@ -67,4 +68,6 @@ public class ApiDocSetting implements PersistentStateComponent<Element> {
     ResponseConfig.DEFAULT_RESPONSE_CONTENT_TYPE = state.getAttributeValue("DEFAULT_RESPONSE_CONTENT_TYPE");
 
   }
+
+
 }

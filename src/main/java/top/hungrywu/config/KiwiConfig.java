@@ -1,5 +1,8 @@
 package top.hungrywu.config;
 
+import org.apache.commons.lang3.StringUtils;
+import top.hungrywu.toolwindow.ConsoleLogFactory;
+
 /**
  * @Description TODO
  * @Author daviswujiahao
@@ -20,4 +23,29 @@ public class KiwiConfig {
     public static String KIWI_ANCESTOR_ID = "";
 
     public static String WIKI_API_DOC_INDEX_PAGE_CONTENT_TITLE_TEMPLATE = "<p><strong>%s</strong>:%s</p>";
+
+    public static boolean validConfig() {
+        if (StringUtils.isEmpty(KiwiConfig.KIWI_USER_NAME)) {
+            ConsoleLogFactory.addErrorLog("config error: wiki username can not be empty");
+            return false;
+        }
+
+        if (StringUtils.isEmpty(KiwiConfig.KIWI_USER_PASSWORD)) {
+            ConsoleLogFactory.addErrorLog("config error: wiki password can not be empty");
+            return false;
+        }
+
+        if (StringUtils.isEmpty(KiwiConfig.KIWI_ANCESTOR_ID)) {
+            ConsoleLogFactory.addErrorLog("config error: wiki ancestor id can not be empty");
+            return false;
+        }
+
+        if (StringUtils.isEmpty(KiwiConfig.KIWI_SPACE_KEY)) {
+            ConsoleLogFactory.addErrorLog("config error: wiki space key can not be empty");
+            return false;
+        }
+
+        return true;
+    }
+
 }

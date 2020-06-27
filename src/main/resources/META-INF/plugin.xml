@@ -19,7 +19,9 @@
                     factoryClass="top.hungrywu.toolwindow.ConsoleLogFactory"/>
 
 
-        <applicationConfigurable instance="top.hungrywu.configuration.ApiDocConfigurable"/>
+        <applicationConfigurable instance="top.hungrywu.configuration.ApiDocConfigurable" id="apidoc"
+                                 displayName="api doc"/>
+
         <applicationService serviceImplementation="top.hungrywu.configuration.ApiDocSetting"/>
 
 
@@ -35,6 +37,16 @@
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
 
+        <action id="top.hungrywu.action.GenerateClassApiDescsAction"
+                class="top.hungrywu.action.GenerateClassApiDescsAction"
+                text="generateClassApiDoc" description="生成本文件的apidoc">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
 
+        <action id="generateApiDocOnWiki" class="top.hungrywu.action.GenerateApiDocOnWiki" text="generateApiDocOnWiki"
+                description="生成本方法的apidoc"
+                popup="false">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
     </actions>
 </idea-plugin>

@@ -15,17 +15,14 @@ import javax.swing.*;
 import java.util.Objects;
 
 
+/**
+ * @author daviswujiahao
+ */
 public class ApiDocConfigurable implements SearchableConfigurable {
 
   private ApiDocSetting apiDocSetting;
 
   private ApiDocSettingForm apiDocSettingForm;
-
-  private String separator = ";";
-
-  private Splitter splitter = Splitter.on(separator).omitEmptyStrings().trimResults();
-
-  private Joiner joiner = Joiner.on(separator);
 
   public ApiDocConfigurable() {
     apiDocSetting = ApiDocSetting.getInstance();
