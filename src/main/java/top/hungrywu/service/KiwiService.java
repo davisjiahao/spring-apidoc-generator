@@ -336,9 +336,7 @@ public class KiwiService {
         CloseableHttpResponse response = null;
         try {
             response = httpClient.execute(httpPost);
-            if (response.getStatusLine().getStatusCode() == HTTP_SUCCESS_CODE
-                    && response.getHeaders("X-Seraph-LoginReason").length > 0
-                    && "OK".equalsIgnoreCase(response.getHeaders("X-Seraph-LoginReason")[0].getValue())) {
+            if (response.getStatusLine().getStatusCode() == HTTP_SUCCESS_CODE) {
                 return httpClient;
             } else {
                 return null;

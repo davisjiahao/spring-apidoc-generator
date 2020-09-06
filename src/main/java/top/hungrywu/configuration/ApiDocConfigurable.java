@@ -72,7 +72,7 @@ public class ApiDocConfigurable implements SearchableConfigurable {
 
                     !StringUtils.equals(RequestConfig.DEFAULT_REQUEST_CONTENT_TYPE, apiDocSettingForm.getRequestDefaultContentType().getText()) ||
                     !StringUtils.equals(RequestConfig.DEFAULT_PROTOCOL_TYPE, Objects.requireNonNull(apiDocSettingForm.getRequestProtocolType().getSelectedItem()).toString()) ||
-                    RequestConfig.DEFAULT_WRAPPED != apiDocSettingForm.getDefaultWrapped().isEnabled() ||
+                    RequestConfig.DEFAULT_WRAPPED != apiDocSettingForm.getDefaultWrapped().isSelected() ||
                     !StringUtils.equals(RequestConfig.WRAPPED_REQUEST_CLASS_NAME, apiDocSettingForm.getWrappedRequestClass().getText()) ||
                     !StringUtils.equals(RequestConfig.WRAPPED_REQUEST_CONTENT_FILE_NAME, apiDocSettingForm.getRequestBizData().getText()) ||
 
@@ -93,7 +93,7 @@ public class ApiDocConfigurable implements SearchableConfigurable {
     RequestConfig.DEFAULT_REQUEST_CONTENT_TYPE =
             apiDocSettingForm.getRequestDefaultContentType().getText();
     RequestConfig.DEFAULT_PROTOCOL_TYPE = Objects.requireNonNull(apiDocSettingForm.getRequestProtocolType().getSelectedItem()).toString();
-    RequestConfig.DEFAULT_WRAPPED = apiDocSettingForm.getDefaultWrapped().isEnabled();
+    RequestConfig.DEFAULT_WRAPPED = apiDocSettingForm.getDefaultWrapped().isSelected();
     RequestConfig.WRAPPED_REQUEST_CLASS_NAME =
             apiDocSettingForm.getWrappedRequestClass().getText();
     RequestConfig.WRAPPED_REQUEST_CONTENT_FILE_NAME =
@@ -116,7 +116,7 @@ public class ApiDocConfigurable implements SearchableConfigurable {
     // request settings
     apiDocSettingForm.getRequestDefaultContentType().setText(RequestConfig.DEFAULT_REQUEST_CONTENT_TYPE);
     apiDocSettingForm.getRequestProtocolType().setSelectedItem(RequestConfig.DEFAULT_PROTOCOL_TYPE);
-    apiDocSettingForm.getDefaultWrapped().setEnabled(RequestConfig.DEFAULT_WRAPPED);
+    apiDocSettingForm.getDefaultWrapped().setSelected(RequestConfig.DEFAULT_WRAPPED);
     apiDocSettingForm.getWrappedRequestClass().setText(RequestConfig.WRAPPED_REQUEST_CLASS_NAME);
     apiDocSettingForm.getRequestBizData().setText(RequestConfig.WRAPPED_REQUEST_CONTENT_FILE_NAME);
 
