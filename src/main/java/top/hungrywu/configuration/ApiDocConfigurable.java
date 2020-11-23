@@ -1,13 +1,11 @@
 package top.hungrywu.configuration;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
+
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
-import top.hungrywu.config.KiwiConfig;
 import top.hungrywu.config.RequestConfig;
 import top.hungrywu.config.ResponseConfig;
 
@@ -64,11 +62,12 @@ public class ApiDocConfigurable implements SearchableConfigurable {
     if (apiDocSettingForm == null) {
       return false;
     }
-    return !StringUtils.equals(KiwiConfig.WIKI_HOST, apiDocSettingForm.getWikiHost().getText()) ||
-                    !StringUtils.equals(KiwiConfig.KIWI_USER_NAME, apiDocSettingForm.getWikiUsername().getText()) ||
-                    !StringUtils.equals(KiwiConfig.KIWI_USER_PASSWORD, apiDocSettingForm.getWikiPassword().getText()) ||
-                    !StringUtils.equals(KiwiConfig.KIWI_SPACE_KEY, apiDocSettingForm.getPageSpaceName().getText()) ||
-                    !StringUtils.equals(KiwiConfig.KIWI_ANCESTOR_ID, apiDocSettingForm.getContentPageId().getText()) ||
+    return
+//            !StringUtils.equals(KiwiConfig.WIKI_HOST, apiDocSettingForm.getWikiHost().getText()) ||
+//                    !StringUtils.equals(KiwiConfig.KIWI_USER_NAME, apiDocSettingForm.getWikiUsername().getText()) ||
+//                    !StringUtils.equals(KiwiConfig.KIWI_USER_PASSWORD, apiDocSettingForm.getWikiPassword().getText()) ||
+//                    !StringUtils.equals(KiwiConfig.KIWI_SPACE_KEY, apiDocSettingForm.getPageSpaceName().getText()) ||
+//                    !StringUtils.equals(KiwiConfig.KIWI_ANCESTOR_ID, apiDocSettingForm.getContentPageId().getText()) ||
 
                     !StringUtils.equals(RequestConfig.DEFAULT_REQUEST_CONTENT_TYPE, apiDocSettingForm.getRequestDefaultContentType().getText()) ||
                     !StringUtils.equals(RequestConfig.DEFAULT_PROTOCOL_TYPE, Objects.requireNonNull(apiDocSettingForm.getRequestProtocolType().getSelectedItem()).toString()) ||
@@ -83,11 +82,11 @@ public class ApiDocConfigurable implements SearchableConfigurable {
   @Override
   public void apply() throws ConfigurationException {
     // wiki settings
-    KiwiConfig.WIKI_HOST = apiDocSettingForm.getWikiHost().getText();
-    KiwiConfig.KIWI_USER_NAME = apiDocSettingForm.getWikiUsername().getText();
-    KiwiConfig.KIWI_USER_PASSWORD = new String(apiDocSettingForm.getWikiPassword().getPassword());
-    KiwiConfig.KIWI_SPACE_KEY = apiDocSettingForm.getPageSpaceName().getText();
-    KiwiConfig.KIWI_ANCESTOR_ID = apiDocSettingForm.getContentPageId().getText();
+//    KiwiConfig.WIKI_HOST = apiDocSettingForm.getWikiHost().getText();
+//    KiwiConfig.KIWI_USER_NAME = apiDocSettingForm.getWikiUsername().getText();
+//    KiwiConfig.KIWI_USER_PASSWORD = new String(apiDocSettingForm.getWikiPassword().getPassword());
+//    KiwiConfig.KIWI_SPACE_KEY = apiDocSettingForm.getPageSpaceName().getText();
+//    KiwiConfig.KIWI_ANCESTOR_ID = apiDocSettingForm.getContentPageId().getText();
 
     // request settings
     RequestConfig.DEFAULT_REQUEST_CONTENT_TYPE =
@@ -107,11 +106,11 @@ public class ApiDocConfigurable implements SearchableConfigurable {
   @Override
   public void reset() {
     // wiki settings
-    apiDocSettingForm.getWikiHost().setText(KiwiConfig.WIKI_HOST);
-    apiDocSettingForm.getWikiUsername().setText(KiwiConfig.KIWI_USER_NAME);
-    apiDocSettingForm.getWikiPassword().setText(KiwiConfig.KIWI_USER_PASSWORD);
-    apiDocSettingForm.getPageSpaceName().setText(KiwiConfig.KIWI_SPACE_KEY);
-    apiDocSettingForm.getContentPageId().setText(KiwiConfig.KIWI_ANCESTOR_ID);
+//    apiDocSettingForm.getWikiHost().setText(KiwiConfig.WIKI_HOST);
+//    apiDocSettingForm.getWikiUsername().setText(KiwiConfig.KIWI_USER_NAME);
+//    apiDocSettingForm.getWikiPassword().setText(KiwiConfig.KIWI_USER_PASSWORD);
+//    apiDocSettingForm.getPageSpaceName().setText(KiwiConfig.KIWI_SPACE_KEY);
+//    apiDocSettingForm.getContentPageId().setText(KiwiConfig.KIWI_ANCESTOR_ID);
 
     // request settings
     apiDocSettingForm.getRequestDefaultContentType().setText(RequestConfig.DEFAULT_REQUEST_CONTENT_TYPE);
