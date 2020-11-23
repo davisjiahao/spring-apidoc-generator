@@ -306,6 +306,8 @@ public class KiwiService {
     private WikiPageResponse buildApi2NewPage(String kiwiAncestorsId, ApiDetail apiDetail) throws Exception {
         String content = buildApiDetailKiwiPageContent(apiDetail);
         String title = apiDetail.getDescription() + ":" + StringUtils.join(apiDetail.getBaseUrl(), "|");
+        ConsoleLogFactory.addInfoLog(title);
+        ConsoleLogFactory.addInfoLog(content);
         return createNewKiwiPage(title, content);
     }
 
@@ -329,6 +331,7 @@ public class KiwiService {
         List<NameValuePair> formparams = new ArrayList<NameValuePair>();
         formparams.add(new BasicNameValuePair("os_username", KiwiConfig.KIWI_USER_NAME));
         formparams.add(new BasicNameValuePair("os_password", KiwiConfig.KIWI_USER_PASSWORD));
+        formparams.add(new BasicNameValuePair("os_cookie", "true"));
         httpPost.setEntity(new UrlEncodedFormEntity(formparams, StandardCharsets.UTF_8));
 
         httpPost.setHeader("Content-type", "application/x-www-form-urlencoded");
@@ -336,6 +339,8 @@ public class KiwiService {
         CloseableHttpResponse response = null;
         try {
             response = httpClient.execute(httpPost);
+            String content = new BufferedReader(new InputStreamReader(response.getEntity().getContent()))
+                    .lines().collect(Collectors.joining(System.lineSeparator()));
             if (response.getStatusLine().getStatusCode() == HTTP_SUCCESS_CODE) {
                 return httpClient;
             } else {
@@ -608,7 +613,7 @@ public class KiwiService {
 
         URIBuilder uriBuilder = new URIBuilder(KiwiConfig.WIKI_HOST + KiwiConfig.WIKI_CONTENT_API_BASE_URL
                 + "/" + parentPageId);
-        uriBuilder.addParameter("expand", "version,children.page.version");
+        uriBuilder.addParameter("expand", "children.page.version");
         // todo 一页最多100，暂时只最多查询100个页面
         uriBuilder.addParameter("start", "0");
         uriBuilder.addParameter("limit", "100");

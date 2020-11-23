@@ -31,11 +31,11 @@ public class ApiDocSetting implements PersistentStateComponent<Element> {
     Element element = new Element("ApiDocSettings");
 
     // wiki settings
-    element.setAttribute("WIKI_HOST", KiwiConfig.WIKI_HOST);
-    element.setAttribute("KIWI_USER_NAME", KiwiConfig.KIWI_USER_NAME);
-    element.setAttribute("KIWI_USER_PASSWORD", KiwiConfig.KIWI_USER_PASSWORD);
-    element.setAttribute("KIWI_SPACE_KEY", KiwiConfig.KIWI_SPACE_KEY);
-    element.setAttribute("KIWI_ANCESTOR_ID", KiwiConfig.KIWI_ANCESTOR_ID);
+//    element.setAttribute("WIKI_HOST", KiwiConfig.WIKI_HOST);
+//    element.setAttribute("KIWI_USER_NAME", KiwiConfig.KIWI_USER_NAME);
+//    element.setAttribute("KIWI_USER_PASSWORD", KiwiConfig.KIWI_USER_PASSWORD);
+//    element.setAttribute("KIWI_SPACE_KEY", KiwiConfig.KIWI_SPACE_KEY);
+//    element.setAttribute("KIWI_ANCESTOR_ID", KiwiConfig.KIWI_ANCESTOR_ID);
 
     // request settings
     element.setAttribute("DEFAULT_REQUEST_CONTENT_TYPE", RequestConfig.DEFAULT_REQUEST_CONTENT_TYPE);
@@ -53,11 +53,11 @@ public class ApiDocSetting implements PersistentStateComponent<Element> {
   @Override
   public void loadState(Element state) {
 
-    KiwiConfig.WIKI_HOST = state.getAttributeValue("WIKI_HOST");
-    KiwiConfig.KIWI_USER_NAME = state.getAttributeValue("KIWI_USER_NAME");
-    KiwiConfig.KIWI_USER_PASSWORD = state.getAttributeValue("KIWI_USER_PASSWORD");
-    KiwiConfig.KIWI_SPACE_KEY = state.getAttributeValue("KIWI_SPACE_KEY");
-    KiwiConfig.KIWI_ANCESTOR_ID = state.getAttributeValue("KIWI_ANCESTOR_ID");
+//    KiwiConfig.WIKI_HOST = state.getAttributeValue("WIKI_HOST");
+//    KiwiConfig.KIWI_USER_NAME = state.getAttributeValue("KIWI_USER_NAME");
+//    KiwiConfig.KIWI_USER_PASSWORD = state.getAttributeValue("KIWI_USER_PASSWORD");
+//    KiwiConfig.KIWI_SPACE_KEY = state.getAttributeValue("KIWI_SPACE_KEY");
+//    KiwiConfig.KIWI_ANCESTOR_ID = state.getAttributeValue("KIWI_ANCESTOR_ID");
 
     RequestConfig.DEFAULT_REQUEST_CONTENT_TYPE = state.getAttributeValue("DEFAULT_REQUEST_CONTENT_TYPE");
     RequestConfig.DEFAULT_PROTOCOL_TYPE = state.getAttributeValue("DEFAULT_PROTOCOL_TYPE");

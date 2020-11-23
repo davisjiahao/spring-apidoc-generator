@@ -30,7 +30,7 @@ public class ConsoleLogFactory implements ToolWindowFactory {
 
     private static void initToolWindowAndConsoleView(@NotNull Project project) {
         if (Objects.isNull(ConsoleLogFactory.toolWindow)) {
-            ConsoleLogFactory.toolWindow = ToolWindowManager.getInstance(project).getToolWindow("apiDoc");
+            ConsoleLogFactory.toolWindow = ToolWindowManager.getInstance(project).getToolWindow("apiDocToolWindow");
         }
         if (Objects.isNull(ConsoleLogFactory.consoleView)) {
             ConsoleLogFactory.consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();

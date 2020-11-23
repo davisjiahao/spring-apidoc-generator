@@ -90,9 +90,9 @@ public class ApiResolver {
     }
 
     private static boolean validConfig() {
-        if (!KiwiConfig.validConfig()) {
-            return false;
-        }
+//        if (!KiwiConfig.validConfig()) {
+//            return false;
+//        }
         if (!RequestConfig.validConfig()) {
             return false;
         }

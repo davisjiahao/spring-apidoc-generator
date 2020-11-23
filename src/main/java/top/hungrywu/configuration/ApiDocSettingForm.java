@@ -9,12 +9,12 @@ public class ApiDocSettingForm {
 
   public JPanel mainPanel;
 
-  private JTextField wikiHost;
-  private JTextField wikiUsername;
-  private JPasswordField wikiPassword;
-  private JTextField pageSpaceName;
-  private JTextField contentPageId;
-  private JPanel wikiSettingsPanel;
+//  private JTextField wikiHost;
+//  private JTextField wikiUsername;
+//  private JPasswordField wikiPassword;
+//  private JTextField pageSpaceName;
+//  private JTextField contentPageId;
+//  private JPanel wikiSettingsPanel;
   private JPanel requestSettingsPanel;
   private JTextField requestBizData;
   private JTextField defaultResponseContentType;
