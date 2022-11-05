@@ -94,18 +94,10 @@ public class MarkdownService {
         content.append(String.format(MD_API_DOC_INDEX_PAGE_CONTENT_TITLE_TEMPLATE, "访问方式", apiMethod));
         content.append(String.format(MD_API_DOC_INDEX_PAGE_CONTENT_TITLE_TEMPLATE, "Content-type", contentType));
 
-        if (CollectionUtils.isEmpty(apiDetail.getParams())) {
-            return content.toString();
-        }
-
         BaseInfo firstParam = new BaseInfo();
         firstParam.setTypeName("参数列表");
         firstParam.setTypeName4TableTitle("参数列表");
-        if (apiDetail.getParams().size() == 1) {
-            firstParam.setSubTypeInfos(apiDetail.getParams().get(0).getSubTypeInfos());
-        } else {
-            firstParam.setSubTypeInfos(new ArrayList<>(apiDetail.getParams()));
-        }
+        firstParam.setSubTypeInfos(new ArrayList<>(apiDetail.getParams()));
 
         content.append(buildContentForFieldType(firstParam));
 
@@ -130,6 +122,10 @@ public class MarkdownService {
                 continue;
             }
 
+            if (hadBuildTypes.contains(nowTypeInfos.getTypeName())) {
+                continue;
+            }
+
             StringBuilder rowData = new StringBuilder();
             for (BaseInfo nowTypeInfo : nowTypeInfos.getSubTypeInfos()) {
 
@@ -146,7 +142,7 @@ public class MarkdownService {
                 }
             }
 
-            content.append(String.format(MD_API_DOC_INDEX_PAGE_CONTENT_TITLE_TEMPLATE, nowTypeInfos.getTypeName4TableTitle(), ""));
+            content.append(String.format(MD_API_DOC_INDEX_PAGE_CONTENT_TITLE_TEMPLATE, nowTypeInfos.getTypeName(), ""));
             content.append(">>|属性名称|属性类型|是否必填|属性描述|\n");
             content.append(">>|:----:|:----:|:----:|:----:|\n");
             content.append(rowData);

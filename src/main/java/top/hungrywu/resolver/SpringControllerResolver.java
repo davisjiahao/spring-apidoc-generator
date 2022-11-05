@@ -259,7 +259,6 @@ public class SpringControllerResolver extends BaseResolver {
 
 
         // 5、解析函数返回值
-        PsiTypeElement returnType = psiMethod.getReturnTypeElement();
         PsiType type = psiMethod.getReturnType();
         ReturnDetail returnDetail = new ReturnDetail();
         returnDetail.setTypeName(type.getPresentableText());

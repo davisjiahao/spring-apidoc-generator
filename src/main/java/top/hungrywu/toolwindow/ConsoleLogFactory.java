@@ -21,7 +21,7 @@ import java.util.Objects;
  * @author daviswujiahao
  */
 
-public class ConsoleLogFactory implements ToolWindowFactory {
+public class ConsoleLogFactory {
 
     private static ConsoleView consoleView;
     private static ToolWindow toolWindow;
@@ -29,45 +29,41 @@ public class ConsoleLogFactory implements ToolWindowFactory {
     private static final String LOG_TIME_FORMATTER = "yyyy-MM-dd mm:ss.SSS";
 
     private static void initToolWindowAndConsoleView(@NotNull Project project) {
-        if (Objects.isNull(ConsoleLogFactory.toolWindow)) {
-            ConsoleLogFactory.toolWindow = ToolWindowManager.getInstance(project).getToolWindow("apiDocToolWindow");
-        }
-        if (Objects.isNull(ConsoleLogFactory.consoleView)) {
-            ConsoleLogFactory.consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
-            Content content =  ConsoleLogFactory.toolWindow.getContentManager().getFactory().createContent(ConsoleLogFactory.consoleView.getComponent(), "", false);
-            ConsoleLogFactory.toolWindow.getContentManager().addContent(content);
-        }
+//        if (Objects.isNull(ConsoleLogFactory.toolWindow)) {
+//            ConsoleLogFactory.toolWindow = ToolWindowManager.getInstance(project).getToolWindow("apiDocToolWindow");
+//        }
+//        if (Objects.isNull(ConsoleLogFactory.consoleView)) {
+//            ConsoleLogFactory.consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
+//            Content content =  ConsoleLogFactory.toolWindow.getContentManager().getFactory().createContent(ConsoleLogFactory.consoleView.getComponent(), "", false);
+//            ConsoleLogFactory.toolWindow.getContentManager().addContent(content);
+//        }
     }
 
     public static boolean logConsoleIsReady() {
-        return Objects.nonNull(consoleView);
-    }
-
-    @Override
-    public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        initToolWindowAndConsoleView(project);
+//        return Objects.nonNull(consoleView);
+        return false;
     }
 
     public static void showToolWindow(@NotNull Project project) {
-        initToolWindowAndConsoleView(project);
-        ConsoleLogFactory.toolWindow.activate(null);
-        ConsoleLogFactory.toolWindow.show(null);
+//        initToolWindowAndConsoleView(project);
+//        ConsoleLogFactory.toolWindow.activate(null);
+//        ConsoleLogFactory.toolWindow.show(null);
     }
 
     public static void addInfoLog(String formatter, Object... argc) {
-        consoleView.print(DateFormatUtils.format(new Date(), LOG_TIME_FORMATTER)
-                        + ":INFO:" + MessageFormatter.arrayFormat(formatter, argc).getMessage() + "\n",
-                ConsoleViewContentType.NORMAL_OUTPUT);
+//        consoleView.print(DateFormatUtils.format(new Date(), LOG_TIME_FORMATTER)
+//                        + ":INFO:" + MessageFormatter.arrayFormat(formatter, argc).getMessage() + "\n",
+//                ConsoleViewContentType.NORMAL_OUTPUT);
     }
 
     public static void addErrorLog(String formatter, Object... argc) {
-        consoleView.print(DateFormatUtils.format(new Date(), LOG_TIME_FORMATTER)
-                + ":ERROR:" + MessageFormatter.arrayFormat(formatter, argc).getMessage() + "\n",
-                ConsoleViewContentType.NORMAL_OUTPUT);
+//        consoleView.print(DateFormatUtils.format(new Date(), LOG_TIME_FORMATTER)
+//                + ":ERROR:" + MessageFormatter.arrayFormat(formatter, argc).getMessage() + "\n",
+//                ConsoleViewContentType.NORMAL_OUTPUT);
     }
 
     public static void clearLog() {
-        consoleView.clear();
+//        consoleView.clear();
     }
 
 }
